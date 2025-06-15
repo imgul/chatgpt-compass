@@ -116,7 +116,6 @@ class ChatGPTMessageExtractor {
       
       // Highlight the message with animated AI colors
       this.highlightMessage(message.element);
-      this.currentHighlightedElement = message.element;
     }
   }
 
@@ -133,9 +132,20 @@ class ChatGPTMessageExtractor {
   }
 
   private highlightMessage(element: HTMLElement) {
-    // Add animated AI-inspired border effect
-    this.addHighlightStyles();
-    element.classList.add('chatgpt-compass-highlight');
+    // Find the specific message container within the article
+    const messageContainer = element.querySelector('.relative.max-w-\\[var\\(--user-chat-width\\,70\\%\\)\\].bg-token-message-surface.rounded-3xl');
+    
+    if (messageContainer) {
+      // Add animated AI-inspired border effect to the specific message container
+      this.addHighlightStyles();
+      messageContainer.classList.add('chatgpt-compass-highlight');
+      this.currentHighlightedElement = messageContainer as HTMLElement;
+    } else {
+      // Fallback to the original element if the specific container is not found
+      this.addHighlightStyles();
+      element.classList.add('chatgpt-compass-highlight');
+      this.currentHighlightedElement = element;
+    }
     
     // Set timeout to remove highlight after configured duration
     this.highlightTimeout = setTimeout(() => {
@@ -151,36 +161,28 @@ class ChatGPTMessageExtractor {
       style.textContent = `
         .chatgpt-compass-highlight {
           position: relative;
-          border-radius: 12px !important;
-        }
-        
-        .chatgpt-compass-highlight::before {
-          content: '';
-          position: absolute;
-          top: -3px;
-          left: -3px;
-          right: -3px;
-          bottom: -3px;
-          border-radius: 15px;
-          background: linear-gradient(
-            45deg,
-            #1a1a2e,
-            #16213e,
-            #0f3460,
-            #e94560,
-            #f38ba8,
-            #a6e3a1,
-            #94e2d5,
-            #89dceb,
-            #74c7ec,
-            #7287fd,
-            #c6a0f6,
-            #eba0ac
-          );
-          background-size: 400% 400%;
-          animation: chatgpt-compass-glow ${CONFIG.ANIMATION_SPEED_MS}ms linear infinite;
-          z-index: -1;
-          pointer-events: none;
+          border: 3px solid transparent !important;
+          background-image: 
+            linear-gradient(var(--bg-token-message-surface, #f0f0f0), var(--bg-token-message-surface, #f0f0f0)),
+            linear-gradient(
+              45deg,
+              #1a1a2e,
+              #16213e,
+              #0f3460,
+              #e94560,
+              #f38ba8,
+              #a6e3a1,
+              #94e2d5,
+              #89dceb,
+              #74c7ec,
+              #7287fd,
+              #c6a0f6,
+              #eba0ac
+            ) !important;
+          background-size: 100% 100%, 400% 400% !important;
+          background-origin: padding-box, border-box !important;
+          background-clip: padding-box, border-box !important;
+          animation: chatgpt-compass-glow ${CONFIG.ANIMATION_SPEED_MS}ms linear infinite !important;
         }
         
         @keyframes chatgpt-compass-glow {
@@ -213,20 +215,19 @@ class ChatGPTMessageExtractor {
           left: -1px;
           right: -1px;
           bottom: -1px;
+          border-radius: inherit;
           background: linear-gradient(
             -45deg,
-            rgba(26, 26, 46, 0.6),
-            rgba(233, 69, 96, 0.4),
-            rgba(243, 139, 168, 0.5),
-            rgba(166, 227, 161, 0.4),
-            rgba(148, 226, 213, 0.5),
-            rgba(137, 220, 235, 0.4),
-            rgba(116, 199, 236, 0.5),
-            rgba(114, 135, 253, 0.4),
-            rgba(198, 160, 246, 0.5),
-            rgba(235, 160, 172, 0.4)
+            rgba(233, 69, 96, 0.3),
+            rgba(243, 139, 168, 0.2),
+            rgba(166, 227, 161, 0.3),
+            rgba(148, 226, 213, 0.2),
+            rgba(137, 220, 235, 0.3),
+            rgba(116, 199, 236, 0.2),
+            rgba(114, 135, 253, 0.3),
+            rgba(198, 160, 246, 0.2)
           );
-          border-radius: 13px;
+          background-size: 200% 200%;
           animation: chatgpt-compass-pulse ${CONFIG.PULSE_SPEED_MS}ms ease-in-out infinite alternate;
           z-index: -1;
           pointer-events: none;

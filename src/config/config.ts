@@ -2,7 +2,7 @@
 
 export const CONFIG = {
   // Duration in seconds for how long the selected message highlight animation should show
-  HIGHLIGHT_DURATION_SECONDS: parseInt(process.env.HIGHLIGHT_DURATION_SECONDS || '3', 10),
+  HIGHLIGHT_DURATION_SECONDS: parseInt(process.env.HIGHLIGHT_DURATION_SECONDS || '5', 10),
   
   // Extension settings
   EXTENSION_NAME: process.env.EXTENSION_NAME || 'ChatGPT Compass',
