@@ -111,18 +111,107 @@ const App: React.FC = () => {
 
       <main className="main">
         {!isChatGPT ? (
-          <section className="card">
-            <h2>Welcome to ChatGPT Compass</h2>
-            <p className="info-text">
-              This extension works on ChatGPT pages. Please navigate to{' '}
-              <strong>chatgpt.com</strong> to see your conversation messages.
-            </p>
-            <div className="feature-list">
-              <p>🧭 Navigate long conversations instantly</p>
-              <p>🔍 Search through your messages</p>
-              <p>⚡ Quick access to any message</p>
-            </div>
-          </section>
+          <div className="guide-container">
+            <section className="card welcome-card">
+              <div className="logo-section">
+                <h1 className="guide-title">🧭 ChatGPT Compass</h1>
+                <p className="guide-subtitle">Navigate your conversations with precision</p>
+              </div>
+            </section>
+
+            <section className="card info-card">
+              <h2>🎯 How to Use</h2>
+              <div className="step-list">
+                <div className="step-item">
+                  <span className="step-number">1</span>
+                  <div className="step-content">
+                    <h3>Navigate to ChatGPT</h3>
+                    <p>Go to <strong>chatgpt.com</strong> and start or open a conversation</p>
+                  </div>
+                </div>
+                <div className="step-item">
+                  <span className="step-number">2</span>
+                  <div className="step-content">
+                    <h3>See Your Messages</h3>
+                    <p>All your messages will automatically appear in this sidepanel</p>
+                  </div>
+                </div>
+                <div className="step-item">
+                  <span className="step-number">3</span>
+                  <div className="step-content">
+                    <h3>Click to Navigate</h3>
+                    <p>Click any message to instantly scroll to it in the conversation</p>
+                  </div>
+                </div>
+                <div className="step-item">
+                  <span className="step-number">4</span>
+                  <div className="step-content">
+                    <h3>Search & Filter</h3>
+                    <p>Use the search box to quickly find specific messages</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className="card features-card">
+              <h2>✨ Key Features</h2>
+              <div className="features-grid">
+                <div className="feature-item">
+                  <span className="feature-icon">🧭</span>
+                  <div className="feature-text">
+                    <h3>Smart Navigation</h3>
+                    <p>Instantly jump to any message in long conversations</p>
+                  </div>
+                </div>
+                <div className="feature-item">
+                  <span className="feature-icon">🔍</span>
+                  <div className="feature-text">
+                    <h3>Powerful Search</h3>
+                    <p>Search through all your messages to find what you need</p>
+                  </div>
+                </div>
+                <div className="feature-item">
+                  <span className="feature-icon">⚡</span>
+                  <div className="feature-text">
+                    <h3>Real-time Updates</h3>
+                    <p>New messages automatically appear as you chat</p>
+                  </div>
+                </div>
+                <div className="feature-item">
+                  <span className="feature-icon">🎨</span>
+                  <div className="feature-text">
+                    <h3>Visual Highlights</h3>
+                    <p>Selected messages get vibrant AI-themed border animations</p>
+                  </div>
+                </div>
+                <div className="feature-item">
+                  <span className="feature-icon">📱</span>
+                  <div className="feature-text">
+                    <h3>Sidepanel Integration</h3>
+                    <p>Works seamlessly with Chrome's built-in sidepanel</p>
+                  </div>
+                </div>
+                <div className="feature-item">
+                  <span className="feature-icon">🔄</span>
+                  <div className="feature-text">
+                    <h3>Live Sync</h3>
+                    <p>Messages sync automatically across all tabs</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className="card cta-card">
+              <h2>🚀 Ready to Start?</h2>
+              <p>Navigate to ChatGPT to begin using the extension!</p>
+              <button 
+                onClick={() => chrome.tabs.create({ url: 'https://chatgpt.com' })}
+                className="btn btn-primary cta-button"
+              >
+                Open ChatGPT →
+              </button>
+            </section>
+          </div>
         ) : (
           <>
             <section className="card">
