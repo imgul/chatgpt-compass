@@ -18,7 +18,7 @@ interface UserMessage {
 
 export const AppContent: React.FC = () => {
   const { resolvedTheme } = useTheme();
-  const { isMessageBookmarked, getBookmarkForMessage, bookmarks } = useBookmarks();
+  const { isMessageBookmarked, getBookmarkForMessage, bookmarks, addBookmark, removeBookmark } = useBookmarks();
   
   // Debug logging
   React.useEffect(() => {
@@ -92,6 +92,38 @@ export const AppContent: React.FC = () => {
       type: 'NAVIGATE_TO_MESSAGE',
       messageId: messageId
     });
+  };
+
+  const handleBookmarkToggle = async (e: React.MouseEvent, message: UserMessage) => {
+    e.stopPropagation(); // Prevent message navigation
+    
+    const isBookmarked = currentTab?.url ? 
+      isMessageBookmarked(message.id, currentTab.url) : 
+      isMessageBookmarked(message.id);
+
+    if (isBookmarked) {
+      // Remove bookmark
+      const bookmark = currentTab?.url ? 
+        getBookmarkForMessage(message.id, currentTab.url) : 
+        getBookmarkForMessage(message.id);
+      
+      if (bookmark) {
+        await removeBookmark(bookmark.id);
+      }
+    } else {
+      // Add bookmark
+      const chatTitle = currentTab?.title || 'ChatGPT Conversation';
+      const chatUrl = currentTab?.url || window.location.href;
+      
+      await addBookmark({
+        messageId: message.id,
+        content: message.content,
+        chatUrl: chatUrl,
+        chatTitle: chatTitle,
+        turnIndex: message.turnIndex,
+        timestamp: message.timestamp
+      });
+    }
   };
 
   const filteredMessages = userMessages.filter((message, index) => {
@@ -349,11 +381,14 @@ export const AppContent: React.FC = () => {
                                 )}
                               </div>
                               <div className="message-status">
-                                {isBookmarked ? (
-                                  <span className="bookmark-icon" title="Bookmarked">📌</span>
-                                ) : (
-                                  <span className="message-time">{formatTime(message.timestamp)}</span>
-                                )}
+                                <span className="message-time">{formatTime(message.timestamp)}</span>
+                                <button
+                                  className={`message-bookmark-btn ${isBookmarked ? 'bookmarked' : ''}`}
+                                  onClick={(e) => handleBookmarkToggle(e, message)}
+                                  title={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
+                                >
+                                  {isBookmarked ? '🗑️' : '📌'}
+                                </button>
                               </div>
                             </div>
                             <div className="message-content">

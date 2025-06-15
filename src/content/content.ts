@@ -271,9 +271,9 @@ class ChatGPTMessageExtractor {
       
       if (shouldUpdate) {
         // Debounce the update
-        setTimeout(() => {
+        setTimeout(async () => {
           this.extractUserMessages();
-          this.addBookmarkButtons();
+          await this.addBookmarkButtons();
           this.sendMessagesToSidepanel();
         }, 500);
       }
@@ -298,24 +298,27 @@ class ChatGPTMessageExtractor {
     });
   }
 
-  private addBookmarkButtons() {
+  private async addBookmarkButtons() {
     // Add bookmark buttons to each user message
-    this.userMessages.forEach(message => {
-      this.addBookmarkButtonToMessage(message);
-    });
+    for (const message of this.userMessages) {
+      await this.addBookmarkButtonToMessage(message);
+    }
   }
 
-  private addBookmarkButtonToMessage(message: UserMessage) {
+  private async addBookmarkButtonToMessage(message: UserMessage) {
     // Check if bookmark button already exists
     if (message.element.querySelector('.chatgpt-compass-bookmark-btn')) {
       return;
     }
 
+    // Check if message is already bookmarked
+    const isBookmarked = await this.isMessageBookmarked(message.id);
+    
     // Create bookmark button
     const bookmarkBtn = document.createElement('button');
     bookmarkBtn.className = 'chatgpt-compass-bookmark-btn';
-    bookmarkBtn.innerHTML = '📌';
-    bookmarkBtn.title = 'Bookmark this message';
+    bookmarkBtn.innerHTML = isBookmarked ? '🗑️' : '📌';
+    bookmarkBtn.title = isBookmarked ? 'Remove bookmark' : 'Bookmark this message';
     bookmarkBtn.style.cssText = `
       position: absolute;
       top: 8px;
@@ -331,6 +334,11 @@ class ChatGPTMessageExtractor {
       z-index: 10;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     `;
+
+    // Add bookmark border if message is bookmarked
+    if (isBookmarked) {
+      this.addBookmarkBorder(message.element);
+    }
 
     // Add hover effects to the message container
     const messageContainer = message.element.querySelector('.relative.max-w-\\[var\\(--user-chat-width\\,70\\%\\)\\]');
@@ -352,15 +360,38 @@ class ChatGPTMessageExtractor {
       e.stopPropagation();
       e.preventDefault();
       
-      await this.createBookmark(message);
+      // Check current bookmark status dynamically
+      const currentlyBookmarked = await this.isMessageBookmarked(message.id);
       
-      // Visual feedback
-      bookmarkBtn.innerHTML = '✅';
-      bookmarkBtn.style.background = 'var(--token-main-surface-secondary, #f3f4f6)';
-      setTimeout(() => {
+      if (currentlyBookmarked) {
+        // Remove bookmark
+        await this.removeBookmark(message.id);
         bookmarkBtn.innerHTML = '📌';
-        bookmarkBtn.style.background = 'var(--token-main-surface-primary, #ffffff)';
-      }, 1000);
+        bookmarkBtn.title = 'Bookmark this message';
+        this.removeBookmarkBorder(message.element);
+        
+        // Visual feedback
+        bookmarkBtn.innerHTML = '✅';
+        bookmarkBtn.style.background = 'var(--token-main-surface-secondary, #f3f4f6)';
+        setTimeout(() => {
+          bookmarkBtn.innerHTML = '📌';
+          bookmarkBtn.style.background = 'var(--token-main-surface-primary, #ffffff)';
+        }, 1000);
+      } else {
+        // Add bookmark
+        await this.createBookmark(message);
+        bookmarkBtn.innerHTML = '🗑️';
+        bookmarkBtn.title = 'Remove bookmark';
+        this.addBookmarkBorder(message.element);
+        
+        // Visual feedback
+        bookmarkBtn.innerHTML = '✅';
+        bookmarkBtn.style.background = 'var(--token-main-surface-secondary, #f3f4f6)';
+        setTimeout(() => {
+          bookmarkBtn.innerHTML = '🗑️';
+          bookmarkBtn.style.background = 'var(--token-main-surface-primary, #ffffff)';
+        }, 1000);
+      }
     });
 
     // Add button to the message container
@@ -444,6 +475,96 @@ class ChatGPTMessageExtractor {
           this.scrollToMessage(retryMessage.id);
         }
       }, 500);
+    }
+  }
+
+  private async isMessageBookmarked(messageId: string): Promise<boolean> {
+    try {
+      const result = await chrome.storage.local.get(['bookmarkStorage']);
+      if (result.bookmarkStorage && result.bookmarkStorage.bookmarks) {
+        const chatUrl = window.location.href;
+        return Object.values(result.bookmarkStorage.bookmarks).some((bookmark: any) => 
+          bookmark.messageId === messageId && bookmark.chatUrl === chatUrl
+        );
+      }
+      return false;
+    } catch (error) {
+      console.error('Error checking bookmark status:', error);
+      return false;
+    }
+  }
+
+  private async removeBookmark(messageId: string) {
+    try {
+      const chatUrl = window.location.href;
+      const result = await chrome.storage.local.get(['bookmarkStorage']);
+      
+      if (result.bookmarkStorage && result.bookmarkStorage.bookmarks) {
+        const bookmarks = result.bookmarkStorage.bookmarks;
+        const bookmarkToRemove = Object.values(bookmarks).find((bookmark: any) => 
+          bookmark.messageId === messageId && bookmark.chatUrl === chatUrl
+        );
+
+        if (bookmarkToRemove) {
+          delete bookmarks[(bookmarkToRemove as any).id];
+          await chrome.storage.local.set({ bookmarkStorage: result.bookmarkStorage });
+          console.log('Bookmark removed for message:', messageId);
+        }
+      }
+    } catch (error) {
+      console.error('Error removing bookmark:', error);
+    }
+  }
+
+  private addBookmarkBorder(element: HTMLElement) {
+    // Add modern AI colored border to the message container
+    const messageContainer = element.querySelector('.relative.max-w-\\[var\\(--user-chat-width\\,70\\%\\)\\]');
+    const targetContainer = messageContainer || element;
+    
+    if (targetContainer) {
+      (targetContainer as HTMLElement).classList.add('chatgpt-compass-bookmarked');
+      this.addBookmarkStyles();
+    }
+  }
+
+  private removeBookmarkBorder(element: HTMLElement) {
+    // Remove the bookmark border
+    const messageContainer = element.querySelector('.relative.max-w-\\[var\\(--user-chat-width\\,70\\%\\)\\]');
+    const targetContainer = messageContainer || element;
+    
+    if (targetContainer) {
+      (targetContainer as HTMLElement).classList.remove('chatgpt-compass-bookmarked');
+    }
+  }
+
+  private addBookmarkStyles() {
+    // Add bookmark border styles if not already added
+    if (!document.getElementById('chatgpt-compass-bookmark-styles')) {
+      const style = document.createElement('style');
+      style.id = 'chatgpt-compass-bookmark-styles';
+      style.textContent = `
+        .chatgpt-compass-bookmarked {
+          position: relative !important;
+          border: 2px solid transparent !important;
+          background: linear-gradient(var(--token-main-surface-primary, #ffffff), var(--token-main-surface-primary, #ffffff)) padding-box,
+                      linear-gradient(135deg, #10b981, #3b82f6, #8b5cf6, #f59e0b) border-box !important;
+          border-radius: 12px !important;
+          animation: bookmark-glow 3s ease-in-out infinite !important;
+        }
+        
+        @keyframes bookmark-glow {
+          0%, 100% {
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.3), 0 0 16px rgba(16, 185, 129, 0.1);
+          }
+          33% {
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.3), 0 0 16px rgba(59, 130, 246, 0.1);
+          }
+          66% {
+            box-shadow: 0 0 8px rgba(139, 92, 246, 0.3), 0 0 16px rgba(139, 92, 246, 0.1);
+          }
+        }
+      `;
+      document.head.appendChild(style);
     }
   }
 
