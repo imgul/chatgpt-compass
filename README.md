@@ -1,16 +1,15 @@
-# Chrome Extension with React Sidepanel
+# ChatGPT Compass
 
-A modern Chrome extension template that renders a React app in Chrome's built-in sidepanel using TypeScript and Webpack.
+Navigate through your ChatGPT conversations with ease! This Chrome extension extracts all your messages from ChatGPT conversations and displays them in a convenient sidepanel, allowing you to quickly find and jump to any message.
 
 ## Features
 
-- ✨ React 18 with TypeScript
-- 🎨 Modern, responsive design with beautiful gradients and glassmorphism
-- 🔧 Webpack build system with development and production modes
-- 📱 Chrome Sidepanel API integration
-- 🚀 Ready for development and customization
-- 💡 Example components and functionality
-- 🔄 Hot reloading during development
+- 🧭 **Smart Navigation**: Instantly jump to any of your messages in long ChatGPT conversations
+- 🔍 **Powerful Search**: Search through all your messages to find what you're looking for
+- ⚡ **Real-time Updates**: Automatically detects new messages as you chat
+- 🎨 **Beautiful Interface**: Modern, responsive design with glassmorphism effects
+- 📱 **Sidepanel Integration**: Uses Chrome's built-in sidepanel for seamless experience
+- 🔄 **Live Sync**: Messages update in real-time as you continue your conversation
 
 ## Project Structure
 
@@ -22,9 +21,11 @@ A modern Chrome extension template that renders a React app in Chrome's built-in
 └── src/
     ├── background/
     │   └── background.ts  # Service worker for extension logic
+    ├── content/
+    │   └── content.ts     # Content script for ChatGPT message extraction
     ├── sidepanel/
     │   ├── index.tsx      # React entry point
-    │   ├── App.tsx        # Main React component
+    │   ├── App.tsx        # Main React component with message navigation
     │   ├── styles.css     # Styles for the app
     │   └── sidepanel.html # HTML template
     └── icons/
@@ -63,10 +64,19 @@ A modern Chrome extension template that renders a React app in Chrome's built-in
 
 ## Usage
 
-1. Click the extension icon in the Chrome toolbar
-2. The sidepanel will open on the right side of the browser
-3. The sidepanel persists across all tabs until manually closed
-4. The app displays current tab information and includes interactive components
+1. **Navigate to ChatGPT**: Go to [chatgpt.com](https://chatgpt.com) and start or continue a conversation
+2. **Open ChatGPT Compass**: Click the extension icon in the Chrome toolbar
+3. **View Your Messages**: The sidepanel will display all your messages from the current conversation
+4. **Search Messages**: Use the search box to filter messages by content
+5. **Navigate to Message**: Click on any message to scroll directly to it in the conversation
+6. **Real-time Updates**: New messages are automatically added as you continue chatting
+
+## How It Works
+
+- **Content Script**: Monitors ChatGPT pages and extracts user messages using the `h5.sr-only` selector
+- **Message Detection**: Identifies messages by looking for "You said:" text in screen reader elements
+- **Real-time Sync**: Uses MutationObserver to detect new messages as they're added
+- **Smart Navigation**: Scrolls to selected messages with smooth animation and highlight effects
 
 ## Development
 
