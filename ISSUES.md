@@ -39,4 +39,60 @@ Extract the error message using `chrome.runtime.lastError.message` before loggin
 - [x] Add proper error message extraction throughout the codebase
 
 ### Resolution
-Fixed by extracting the actual error message using `chrome.runtime.lastError.message` instead of logging the entire object. Updated all instances in the background script. 
+Fixed by extracting the actual error message using `chrome.runtime.lastError.message` instead of logging the entire object. Updated all instances in the background script.
+
+---
+
+## Issue #2: "No active side panel for tabId" error despite sidepanel being enabled
+
+**Priority:** High  
+**Type:** Bug  
+**Status:** Fixed  
+**Created:** 2024-12-19
+
+### Description
+Even after successfully enabling the sidepanel for a ChatGPT tab, attempting to open it results in "No active side panel for tabId" error.
+
+### Error Log
+```
+ChatGPT Compass: Enabled sidepanel for ChatGPT tab 737707504
+ChatGPT Compass: Error opening sidepanel: No active side panel for tabId: 737707504
+```
+
+### Root Cause
+The sidepanel.setOptions() and sidepanel.open() are called in nested callbacks, which may be causing timing or state issues. The sidepanel might not be fully "active" immediately after being enabled.
+
+### Solution
+Enable sidepanel for all ChatGPT tabs when they load, then simply open on click without re-enabling.
+
+---
+
+## Issue #3: User gesture lost in fallback sidepanel opening
+
+**Priority:** High  
+**Type:** Bug  
+**Status:** Fixed  
+**Created:** 2024-12-19
+
+### Description
+The fallback sidepanel opening fails with "sidePanel.open() may only be called in response to a user gesture" because the nested callback breaks the user gesture context.
+
+### Error Log
+```
+ChatGPT Compass: Fallback also failed: `sidePanel.open()` may only be called in response to a user gesture.
+```
+
+### Root Cause
+Multiple nested callbacks in the click handler break the user gesture chain, making Chrome think the fallback call is not in response to user action.
+
+### Solution
+Simplify the click handler and pre-enable sidepanels to avoid nested calls during user gesture.
+
+### Resolution Issues #2 & #3
+Fixed by implementing a two-phase approach:
+1. **Pre-enable sidepanels**: Enable sidepanels immediately when ChatGPT tabs load or when extension installs
+2. **Simplified click handler**: Remove nested callbacks that break user gesture context
+3. **Early enabling**: Enable sidepanel on 'loading' status, not waiting for 'complete'
+4. **Existing tab support**: Enable sidepanel for any existing ChatGPT tabs on extension install
+
+This ensures sidepanels are ready before user clicks, eliminating timing issues and maintaining user gesture context. 
