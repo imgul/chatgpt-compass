@@ -26,6 +26,9 @@ class ChatGPTMessageExtractor {
     // Set up mutation observer to watch for new messages
     this.setupObserver();
     
+    // Add bookmark buttons to messages
+    this.addBookmarkButtons();
+    
     // Listen for messages from sidepanel
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message.type === 'GET_USER_MESSAGES') {
@@ -37,6 +40,9 @@ class ChatGPTMessageExtractor {
       } else if (message.type === 'GET_CHATGPT_THEME') {
         const theme = this.detectChatGPTTheme();
         sendResponse({ theme });
+      } else if (message.type === 'NAVIGATE_TO_BOOKMARK') {
+        this.navigateToBookmark(message.messageId, message.turnIndex);
+        sendResponse({ success: true });
       }
     });
 
@@ -267,6 +273,7 @@ class ChatGPTMessageExtractor {
         // Debounce the update
         setTimeout(() => {
           this.extractUserMessages();
+          this.addBookmarkButtons();
           this.sendMessagesToSidepanel();
         }, 500);
       }
@@ -289,6 +296,155 @@ class ChatGPTMessageExtractor {
         turnIndex: msg.turnIndex
       }))
     });
+  }
+
+  private addBookmarkButtons() {
+    // Add bookmark buttons to each user message
+    this.userMessages.forEach(message => {
+      this.addBookmarkButtonToMessage(message);
+    });
+  }
+
+  private addBookmarkButtonToMessage(message: UserMessage) {
+    // Check if bookmark button already exists
+    if (message.element.querySelector('.chatgpt-compass-bookmark-btn')) {
+      return;
+    }
+
+    // Create bookmark button
+    const bookmarkBtn = document.createElement('button');
+    bookmarkBtn.className = 'chatgpt-compass-bookmark-btn';
+    bookmarkBtn.innerHTML = '📌';
+    bookmarkBtn.title = 'Bookmark this message';
+    bookmarkBtn.style.cssText = `
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--token-main-surface-primary, #ffffff);
+      border: 1px solid var(--token-border-medium, #d1d5db);
+      border-radius: 6px;
+      padding: 4px 6px;
+      cursor: pointer;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      z-index: 10;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    `;
+
+    // Add hover effects to the message container
+    const messageContainer = message.element.querySelector('.relative.max-w-\\[var\\(--user-chat-width\\,70\\%\\)\\]');
+    const targetContainer = messageContainer || message.element;
+
+    // Show/hide button on hover
+    const showButton = () => {
+      bookmarkBtn.style.opacity = '1';
+    };
+    const hideButton = () => {
+      bookmarkBtn.style.opacity = '0';
+    };
+
+    targetContainer.addEventListener('mouseenter', showButton);
+    targetContainer.addEventListener('mouseleave', hideButton);
+
+    // Handle bookmark click
+    bookmarkBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      
+      await this.createBookmark(message);
+      
+      // Visual feedback
+      bookmarkBtn.innerHTML = '✅';
+      bookmarkBtn.style.background = 'var(--token-main-surface-secondary, #f3f4f6)';
+      setTimeout(() => {
+        bookmarkBtn.innerHTML = '📌';
+        bookmarkBtn.style.background = 'var(--token-main-surface-primary, #ffffff)';
+      }, 1000);
+    });
+
+    // Add button to the message container
+    if (targetContainer) {
+      (targetContainer as HTMLElement).style.position = 'relative';
+      targetContainer.appendChild(bookmarkBtn);
+    }
+  }
+
+  private async createBookmark(message: UserMessage) {
+    try {
+      const chatTitle = this.getChatTitle();
+      const chatUrl = window.location.href;
+      
+      const bookmarkData = {
+        messageId: message.id,
+        content: message.content,
+        chatUrl: chatUrl,
+        chatTitle: chatTitle,
+        turnIndex: message.turnIndex,
+        timestamp: message.timestamp
+      };
+
+      // Send to background script to handle bookmark creation
+      await chrome.runtime.sendMessage({
+        type: 'CREATE_BOOKMARK',
+        bookmark: bookmarkData
+      });
+
+      console.log('Bookmark created for message:', message.id);
+    } catch (error) {
+      console.error('Error creating bookmark:', error);
+    }
+  }
+
+  private getChatTitle(): string {
+    // Try to get the chat title from various possible selectors
+    const titleSelectors = [
+      'h1[class*="text"]',
+      '[data-testid="conversation-title"]',
+      'title',
+      'h1',
+      'h2'
+    ];
+
+    for (const selector of titleSelectors) {
+      const titleElement = document.querySelector(selector);
+      if (titleElement && titleElement.textContent?.trim()) {
+        return titleElement.textContent.trim();
+      }
+    }
+
+    // Fallback to URL-based title
+    const urlPath = window.location.pathname;
+    if (urlPath.includes('/c/')) {
+      return `ChatGPT Conversation ${urlPath.split('/c/')[1]?.substring(0, 8) || ''}`;
+    }
+
+    return 'ChatGPT Conversation';
+  }
+
+  private navigateToBookmark(messageId: string, turnIndex: number) {
+    // Find message by ID or turn index
+    let message = this.userMessages.find(msg => msg.id === messageId);
+    
+    if (!message && typeof turnIndex === 'number') {
+      message = this.userMessages.find(msg => msg.turnIndex === turnIndex);
+    }
+
+    if (message && message.element) {
+      this.scrollToMessage(message.id);
+    } else {
+      console.warn('Message not found for bookmark navigation:', { messageId, turnIndex });
+      // Try to extract messages again in case they weren't loaded
+      this.extractUserMessages();
+      setTimeout(() => {
+        const retryMessage = this.userMessages.find(msg => 
+          msg.id === messageId || msg.turnIndex === turnIndex
+        );
+        if (retryMessage) {
+          this.scrollToMessage(retryMessage.id);
+        }
+      }, 500);
+    }
   }
 
   private detectChatGPTTheme(): 'light' | 'dark' {

@@ -192,6 +192,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
       });
       break;
+
+    case 'CREATE_BOOKMARK':
+      // Handle bookmark creation from content script
+      if (message.bookmark) {
+        handleBookmarkCreation(message.bookmark);
+        sendResponse({ success: true });
+      }
+      break;
   }
 });
 
@@ -199,6 +207,43 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 chrome.tabs.onRemoved.addListener((tabId) => {
   tabMessages.delete(tabId);
 });
+
+// Helper function to handle bookmark creation
+async function handleBookmarkCreation(bookmarkData: any) {
+  try {
+    // Get existing bookmarks
+    const result = await chrome.storage.local.get(['bookmarkStorage']);
+    const storage = result.bookmarkStorage || {
+      bookmarks: {},
+      folders: {},
+      recentChats: {}
+    };
+
+    // Generate unique ID for bookmark
+    const bookmarkId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+    
+    // Create bookmark object
+    const bookmark = {
+      id: bookmarkId,
+      ...bookmarkData,
+      bookmarkedAt: Date.now()
+    };
+
+    // Update storage
+    storage.bookmarks[bookmarkId] = bookmark;
+    storage.recentChats[bookmarkData.chatUrl] = {
+      title: bookmarkData.chatTitle,
+      lastVisited: Date.now()
+    };
+
+    // Save to storage
+    await chrome.storage.local.set({ bookmarkStorage: storage });
+    
+    console.log('Background: Bookmark created:', bookmark);
+  } catch (error) {
+    console.error('Background: Error creating bookmark:', error);
+  }
+}
 
 // Helper function to forward messages to sidepanel
 function forwardToSidepanel(tabId: number, message: any) {
