@@ -41,11 +41,11 @@ chrome.action.onClicked.addListener((tab: chrome.tabs.Tab) => {
           windowId: tab.windowId 
         }, () => {
           if (chrome.runtime.lastError) {
-            console.error('ChatGPT Compass: Error opening sidepanel:', chrome.runtime.lastError);
+            console.error('ChatGPT Compass: Error opening sidepanel:', chrome.runtime.lastError.message);
             // Try fallback without windowId
             chrome.sidePanel.open({ tabId: tab.id! }, () => {
               if (chrome.runtime.lastError) {
-                console.error('ChatGPT Compass: Fallback also failed:', chrome.runtime.lastError);
+                console.error('ChatGPT Compass: Fallback also failed:', chrome.runtime.lastError.message);
               } else {
                 console.log('ChatGPT Compass: Sidepanel opened via fallback for tab', tab.id);
               }
@@ -58,7 +58,7 @@ chrome.action.onClicked.addListener((tab: chrome.tabs.Tab) => {
         // No windowId available, try direct approach
         chrome.sidePanel.open({ tabId: tab.id! }, () => {
           if (chrome.runtime.lastError) {
-            console.error('ChatGPT Compass: Error opening sidepanel (no windowId):', chrome.runtime.lastError);
+            console.error('ChatGPT Compass: Error opening sidepanel (no windowId):', chrome.runtime.lastError.message);
           } else {
             console.log('ChatGPT Compass: Sidepanel opened (no windowId) for tab', tab.id);
           }
@@ -83,7 +83,7 @@ function showRedirectNotification(): void {
       buttons: [{ title: 'OK' }]
     }, () => {
       if (chrome.runtime.lastError) {
-        console.log('ChatGPT Compass: Notifications not available');
+        console.log('ChatGPT Compass: Notifications not available:', chrome.runtime.lastError.message);
       }
     });
   } catch (error) {
@@ -135,7 +135,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       enabled: isChatGPT
     }, () => {
       if (chrome.runtime.lastError) {
-        console.error('ChatGPT Compass: Error setting sidepanel options:', chrome.runtime.lastError);
+        console.error('ChatGPT Compass: Error setting sidepanel options:', chrome.runtime.lastError.message);
       } else if (isChatGPT) {
         console.log('ChatGPT Compass: Enabled sidepanel for ChatGPT tab', tabId);
       }
