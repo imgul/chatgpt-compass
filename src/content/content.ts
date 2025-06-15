@@ -335,16 +335,23 @@ class ChatGPTMessageExtractor {
     bookmarkBtn.className = 'chatgpt-compass-bookmark-btn';
     bookmarkBtn.innerHTML = isBookmarked ? this.getTrashIcon() : this.getBookmarkIcon();
     bookmarkBtn.title = isBookmarked ? 'Remove bookmark' : 'Bookmark this message';
+    // Detect theme and set appropriate colors
+    const theme = this.detectChatGPTTheme();
+    const textColor = theme === 'dark' ? '#f3f4f6' : '#374151';
+    const bgColor = theme === 'dark' ? 'var(--token-main-surface-primary, #2d2d30)' : 'var(--token-main-surface-primary, #ffffff)';
+    const borderColor = theme === 'dark' ? 'var(--token-border-medium, #525252)' : 'var(--token-border-medium, #d1d5db)';
+    
     bookmarkBtn.style.cssText = `
       position: absolute;
       top: 8px;
       right: 8px;
-      background: var(--token-main-surface-primary, #ffffff);
-      border: 1px solid var(--token-border-medium, #d1d5db);
+      background: ${bgColor};
+      border: 1px solid ${borderColor};
       border-radius: 6px;
       padding: 4px 6px;
       cursor: pointer;
       font-size: 14px;
+      color: ${textColor};
       opacity: 0;
       transition: opacity 0.2s ease;
       z-index: 10;
@@ -388,10 +395,10 @@ class ChatGPTMessageExtractor {
         
         // Visual feedback
         bookmarkBtn.innerHTML = this.getCheckIcon();
-        bookmarkBtn.style.background = 'var(--token-main-surface-secondary, #f3f4f6)';
+        bookmarkBtn.style.background = theme === 'dark' ? 'var(--token-main-surface-secondary, #3a3a3c)' : 'var(--token-main-surface-secondary, #f3f4f6)';
         setTimeout(() => {
           bookmarkBtn.innerHTML = this.getBookmarkIcon();
-          bookmarkBtn.style.background = 'var(--token-main-surface-primary, #ffffff)';
+          bookmarkBtn.style.background = bgColor;
         }, 1000);
       } else {
         // Add bookmark
@@ -402,10 +409,10 @@ class ChatGPTMessageExtractor {
         
         // Visual feedback
         bookmarkBtn.innerHTML = this.getCheckIcon();
-        bookmarkBtn.style.background = 'var(--token-main-surface-secondary, #f3f4f6)';
+        bookmarkBtn.style.background = theme === 'dark' ? 'var(--token-main-surface-secondary, #3a3a3c)' : 'var(--token-main-surface-secondary, #f3f4f6)';
         setTimeout(() => {
           bookmarkBtn.innerHTML = this.getTrashIcon();
-          bookmarkBtn.style.background = 'var(--token-main-surface-primary, #ffffff)';
+          bookmarkBtn.style.background = bgColor;
         }, 1000);
       }
     });
@@ -558,11 +565,18 @@ class ChatGPTMessageExtractor {
     if (!document.getElementById('chatgpt-compass-bookmark-styles')) {
       const style = document.createElement('style');
       style.id = 'chatgpt-compass-bookmark-styles';
+      
+      // Detect theme for appropriate background colors
+      const theme = this.detectChatGPTTheme();
+      const lightBg = 'var(--token-main-surface-primary, #ffffff)';
+      const darkBg = 'var(--token-main-surface-primary, #2d2d30)';
+      const bgColor = theme === 'dark' ? darkBg : lightBg;
+      
       style.textContent = `
         .chatgpt-compass-bookmarked {
           position: relative !important;
           border: 2px solid transparent !important;
-          background: linear-gradient(var(--token-main-surface-primary, #ffffff), var(--token-main-surface-primary, #ffffff)) padding-box,
+          background: linear-gradient(${bgColor}, ${bgColor}) padding-box,
                       linear-gradient(135deg, #10b981, #3b82f6, #8b5cf6, #f59e0b) border-box !important;
           border-radius: 12px !important;
           animation: bookmark-glow 3s ease-in-out infinite !important;
@@ -623,6 +637,12 @@ class ChatGPTMessageExtractor {
         if (bookmarkBtn) {
           bookmarkBtn.innerHTML = this.getTrashIcon();
           bookmarkBtn.title = 'Remove bookmark';
+          
+          // Update colors for current theme
+          const theme = this.detectChatGPTTheme();
+          const textColor = theme === 'dark' ? '#f3f4f6' : '#374151';
+          bookmarkBtn.style.color = textColor;
+          
           console.log('ChatGPT Compass: Updated bookmark button for message', message.id);
         } else {
           console.log('ChatGPT Compass: No bookmark button found for message', message.id);
@@ -645,6 +665,11 @@ class ChatGPTMessageExtractor {
       if (bookmarkBtn) {
         bookmarkBtn.innerHTML = this.getTrashIcon();
         bookmarkBtn.title = 'Remove bookmark';
+        
+        // Update colors for current theme
+        const theme = this.detectChatGPTTheme();
+        const textColor = theme === 'dark' ? '#f3f4f6' : '#374151';
+        bookmarkBtn.style.color = textColor;
       }
     }
   }
@@ -660,6 +685,11 @@ class ChatGPTMessageExtractor {
       if (bookmarkBtn) {
         bookmarkBtn.innerHTML = this.getBookmarkIcon();
         bookmarkBtn.title = 'Bookmark this message';
+        
+        // Update colors for current theme
+        const theme = this.detectChatGPTTheme();
+        const textColor = theme === 'dark' ? '#f3f4f6' : '#374151';
+        bookmarkBtn.style.color = textColor;
       }
     }
   }
