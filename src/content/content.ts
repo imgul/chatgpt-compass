@@ -19,15 +19,23 @@ class ChatGPTMessageExtractor {
     this.init();
   }
 
-  private init() {
+  private async init() {
+    // Wait for DOM to be ready
+    await this.waitForDOM();
+    
     // Initial extraction
     this.extractUserMessages();
     
     // Set up mutation observer to watch for new messages
     this.setupObserver();
     
-    // Add bookmark buttons to messages
-    this.addBookmarkButtons();
+    // Add bookmark buttons to messages and restore states
+    await this.addBookmarkButtons();
+    
+    // Wait a bit more for buttons to be added, then restore states with retries
+    setTimeout(async () => {
+      await this.restoreBookmarkStatesWithRetry();
+    }, 1000);
     
     // Listen for messages from sidepanel
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -42,6 +50,12 @@ class ChatGPTMessageExtractor {
         sendResponse({ theme });
       } else if (message.type === 'NAVIGATE_TO_BOOKMARK') {
         this.navigateToBookmark(message.messageId, message.turnIndex);
+        sendResponse({ success: true });
+      } else if (message.type === 'BOOKMARK_ADDED') {
+        this.handleBookmarkAdded(message.messageId);
+        sendResponse({ success: true });
+      } else if (message.type === 'BOOKMARK_REMOVED') {
+        this.handleBookmarkRemoved(message.messageId);
         sendResponse({ success: true });
       }
     });
@@ -102,12 +116,14 @@ class ChatGPTMessageExtractor {
   }
 
   private generateMessageId(article: Element, turnIndex: number): string {
-    // Generate a unique ID for the message
-    const messageId = article.getAttribute('data-message-id');
-    if (messageId) {
-      return messageId;
+    // Try to get a stable ID from the article's data attributes
+    const testId = article.getAttribute('data-testid');
+    if (testId && testId.startsWith('conversation-turn-')) {
+      return `user-message-${testId}`;
     }
-    return `user-message-${turnIndex}-${Date.now()}`;
+    
+    // Fallback to turn index based ID (more stable than timestamp)
+    return `user-message-turn-${turnIndex}`;
   }
 
   private scrollToMessage(messageId: string) {
@@ -566,6 +582,97 @@ class ChatGPTMessageExtractor {
       `;
       document.head.appendChild(style);
     }
+  }
+
+  private async restoreBookmarkStatesWithRetry(maxRetries: number = 3) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      console.log(`ChatGPT Compass: Restore attempt ${attempt}/${maxRetries}`);
+      
+      // Re-extract messages to ensure we have the latest DOM state
+      this.extractUserMessages();
+      
+      if (this.userMessages.length > 0) {
+        await this.restoreBookmarkStates();
+        return; // Success, exit retry loop
+      }
+      
+      // Wait before retrying
+      if (attempt < maxRetries) {
+        console.log('ChatGPT Compass: No messages found, retrying in 2 seconds...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+    
+    console.log('ChatGPT Compass: Failed to restore bookmark states after', maxRetries, 'attempts');
+  }
+
+  private async restoreBookmarkStates() {
+    console.log('ChatGPT Compass: Restoring bookmark states for', this.userMessages.length, 'messages');
+    
+    // Restore bookmark visual states after page refresh
+    for (const message of this.userMessages) {
+      const isBookmarked = await this.isMessageBookmarked(message.id);
+      console.log(`ChatGPT Compass: Message ${message.id} bookmarked:`, isBookmarked);
+      
+      if (isBookmarked) {
+        // Add bookmark border
+        this.addBookmarkBorder(message.element);
+        
+        // Update bookmark button if it exists
+        const bookmarkBtn = message.element.querySelector('.chatgpt-compass-bookmark-btn') as HTMLButtonElement;
+        if (bookmarkBtn) {
+          bookmarkBtn.innerHTML = '🗑️';
+          bookmarkBtn.title = 'Remove bookmark';
+          console.log('ChatGPT Compass: Updated bookmark button for message', message.id);
+        } else {
+          console.log('ChatGPT Compass: No bookmark button found for message', message.id);
+        }
+      }
+    }
+    
+    // Notify sidebar to update bookmark states
+    this.sendMessagesToSidepanel();
+  }
+
+  private handleBookmarkAdded(messageId: string) {
+    const message = this.userMessages.find(msg => msg.id === messageId);
+    if (message) {
+      // Add bookmark border
+      this.addBookmarkBorder(message.element);
+      
+      // Update bookmark button
+      const bookmarkBtn = message.element.querySelector('.chatgpt-compass-bookmark-btn') as HTMLButtonElement;
+      if (bookmarkBtn) {
+        bookmarkBtn.innerHTML = '🗑️';
+        bookmarkBtn.title = 'Remove bookmark';
+      }
+    }
+  }
+
+  private handleBookmarkRemoved(messageId: string) {
+    const message = this.userMessages.find(msg => msg.id === messageId);
+    if (message) {
+      // Remove bookmark border
+      this.removeBookmarkBorder(message.element);
+      
+      // Update bookmark button
+      const bookmarkBtn = message.element.querySelector('.chatgpt-compass-bookmark-btn') as HTMLButtonElement;
+      if (bookmarkBtn) {
+        bookmarkBtn.innerHTML = '📌';
+        bookmarkBtn.title = 'Bookmark this message';
+      }
+    }
+  }
+
+  private async waitForDOM(): Promise<void> {
+    return new Promise((resolve) => {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => resolve());
+      } else {
+        // DOM is already ready
+        resolve();
+      }
+    });
   }
 
   private detectChatGPTTheme(): 'light' | 'dark' {

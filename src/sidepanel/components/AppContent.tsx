@@ -19,10 +19,13 @@ interface UserMessage {
 export const AppContent: React.FC = () => {
   const { resolvedTheme } = useTheme();
   const { isMessageBookmarked, getBookmarkForMessage, bookmarks, addBookmark, removeBookmark } = useBookmarks();
+  const [refreshKey, setRefreshKey] = React.useState(0);
   
   // Debug logging
   React.useEffect(() => {
     console.log('AppContent: bookmarks count:', bookmarks.length);
+    // Force re-render when bookmarks change to update button states
+    setRefreshKey(prev => prev + 1);
   }, [bookmarks]);
   const [currentTab, setCurrentTab] = useState<TabInfo | null>(null);
   const [userMessages, setUserMessages] = useState<UserMessage[]>([]);
@@ -109,6 +112,19 @@ export const AppContent: React.FC = () => {
       
       if (bookmark) {
         await removeBookmark(bookmark.id);
+        
+        // Notify content script to update visual state
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs[0]?.id) {
+            chrome.tabs.sendMessage(tabs[0].id, {
+              type: 'BOOKMARK_REMOVED',
+              messageId: message.id
+            });
+          }
+        });
+        
+        // Force re-render to update bookmark button states
+        setRefreshKey(prev => prev + 1);
       }
     } else {
       // Add bookmark
@@ -123,6 +139,19 @@ export const AppContent: React.FC = () => {
         turnIndex: message.turnIndex,
         timestamp: message.timestamp
       });
+      
+              // Notify content script to update visual state
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs[0]?.id) {
+            chrome.tabs.sendMessage(tabs[0].id, {
+              type: 'BOOKMARK_ADDED',
+              messageId: message.id
+            });
+          }
+        });
+        
+        // Force re-render to update bookmark button states
+        setRefreshKey(prev => prev + 1);
     }
   };
 
