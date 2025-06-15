@@ -95,4 +95,45 @@ Fixed by implementing a two-phase approach:
 3. **Early enabling**: Enable sidepanel on 'loading' status, not waiting for 'complete'
 4. **Existing tab support**: Enable sidepanel for any existing ChatGPT tabs on extension install
 
-This ensures sidepanels are ready before user clicks, eliminating timing issues and maintaining user gesture context. 
+This ensures sidepanels are ready before user clicks, eliminating timing issues and maintaining user gesture context.
+
+---
+
+## Issue #4: Persistent "No active side panel for tabId" error despite sidepanel being enabled
+
+**Priority:** Critical  
+**Type:** Bug  
+**Status:** In Progress  
+**Created:** 2024-12-19
+
+### Description
+Even after implementing pre-enabling and simplified click handling, the sidepanel still fails to open with "No active side panel for tabId" error. The logs show the sidepanel is being enabled successfully, but Chrome still doesn't consider it "active".
+
+### Error Log
+```
+ChatGPT Compass: Extension installed, sidepanel configured
+ChatGPT Compass: Enabled sidepanel for existing ChatGPT tab 737707504
+ChatGPT Compass: Enabled sidepanel for ChatGPT tab 737707504
+ChatGPT Compass: Attempting to open sidepanel for tab 737707504
+ChatGPT Compass: Primary method failed: No active side panel for tabId: 737707504
+ChatGPT Compass: Secondary method failed: No active side panel for tabId: 737707504
+```
+
+### Root Cause Analysis
+The issue might be:
+1. **Global vs Per-Tab**: Sidepanel might need to be enabled globally, not per-tab
+2. **API Usage**: We might be using the wrong combination of sidepanel API calls
+3. **Chrome Version**: Potential Chrome version compatibility issues
+4. **Extension Context**: The sidepanel might not be properly registered in the extension context
+
+### Solution Strategy
+Try a different approach:
+1. Enable sidepanel globally for all tabs on install
+2. Use path-based sidepanel opening instead of tab-specific
+3. Investigate alternative sidepanel activation methods
+4. Add more comprehensive debugging
+
+### Attempted Solutions
+1. **Global Enabling**: Changed from per-tab enabling to global sidepanel enabling
+2. **Simplified Opening**: Use windowId-only approach instead of tabId-specific
+3. **Removed Complexity**: Eliminated per-tab state management to reduce timing issues 

@@ -27,39 +27,28 @@ chrome.action.onClicked.addListener((tab: chrome.tabs.Tab) => {
     return;
   }
 
-  // For ChatGPT pages, try to open sidepanel directly (should already be enabled)
+  // For ChatGPT pages, open sidepanel using the global approach
   console.log('ChatGPT Compass: Attempting to open sidepanel for tab', tab.id);
   
-  // Try primary method with windowId
-  if (tab.windowId) {
-    chrome.sidePanel.open({ 
-      tabId: tab.id,
-      windowId: tab.windowId 
-    }, () => {
-      if (chrome.runtime.lastError) {
-        console.error('ChatGPT Compass: Primary method failed:', chrome.runtime.lastError.message);
-        // Try without windowId
-        chrome.sidePanel.open({ tabId: tab.id! }, () => {
+  // Try opening with windowId only (global sidepanel approach)
+  chrome.sidePanel.open({ windowId: tab.windowId }, () => {
+    if (chrome.runtime.lastError) {
+      console.error('ChatGPT Compass: Global open failed:', chrome.runtime.lastError.message);
+      
+      // Fallback: Try with windowId if available
+      if (tab.windowId) {
+        chrome.sidePanel.open({ windowId: tab.windowId }, () => {
           if (chrome.runtime.lastError) {
-            console.error('ChatGPT Compass: Secondary method failed:', chrome.runtime.lastError.message);
+            console.error('ChatGPT Compass: WindowId fallback failed:', chrome.runtime.lastError.message);
           } else {
-            console.log('ChatGPT Compass: Sidepanel opened via secondary method for tab', tab.id);
+            console.log('ChatGPT Compass: Sidepanel opened via windowId fallback');
           }
         });
-      } else {
-        console.log('ChatGPT Compass: Sidepanel opened via primary method for tab', tab.id);
       }
-    });
-  } else {
-    // No windowId available
-    chrome.sidePanel.open({ tabId: tab.id }, () => {
-      if (chrome.runtime.lastError) {
-        console.error('ChatGPT Compass: No windowId method failed:', chrome.runtime.lastError.message);
-      } else {
-        console.log('ChatGPT Compass: Sidepanel opened (no windowId) for tab', tab.id);
-      }
-    });
-  }
+    } else {
+      console.log('ChatGPT Compass: Sidepanel opened via global method');
+    }
+  });
 });
 
 // Helper function to show redirect notification
@@ -109,53 +98,29 @@ chrome.notifications.onClicked.addListener((notificationId) => {
   }
 });
 
-// Set the sidepanel to be available only on ChatGPT sites
+// Set the sidepanel to be available globally, but only show action on ChatGPT sites
 chrome.runtime.onInstalled.addListener(() => {
-  // Set global sidepanel options
+  // Set global sidepanel options - enabled globally
   chrome.sidePanel.setOptions({
     path: 'sidepanel.html',
-    enabled: false
+    enabled: true  // Enable globally instead of per-tab
   }, () => {
     if (chrome.runtime.lastError) {
       console.error('ChatGPT Compass: Error setting global sidepanel options:', chrome.runtime.lastError.message);
     } else {
-      console.log('ChatGPT Compass: Extension installed, sidepanel configured');
-      
-      // Enable sidepanel for any existing ChatGPT tabs
-      chrome.tabs.query({}, (tabs) => {
-        tabs.forEach(tab => {
-          if (tab.url && (tab.url.includes('chatgpt.com') || tab.url.includes('chat.openai.com'))) {
-            chrome.sidePanel.setOptions({
-              tabId: tab.id!,
-              enabled: true
-            }, () => {
-              if (!chrome.runtime.lastError) {
-                console.log('ChatGPT Compass: Enabled sidepanel for existing ChatGPT tab', tab.id);
-              }
-            });
-          }
-        });
-      });
+      console.log('ChatGPT Compass: Extension installed, sidepanel globally enabled');
     }
   });
 });
 
-// Enable sidepanel only on ChatGPT domains
+// Note: Sidepanel is now globally enabled, no need for per-tab enabling
+// This listener is kept for future enhancements but currently not needed
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  // Enable sidepanel as soon as URL is available, not waiting for complete load
-  if ((changeInfo.status === 'loading' || changeInfo.status === 'complete') && tab.url) {
+  if (changeInfo.status === 'complete' && tab.url) {
     const isChatGPT = tab.url.includes('chatgpt.com') || tab.url.includes('chat.openai.com');
-    
-    chrome.sidePanel.setOptions({
-      tabId: tabId,
-      enabled: isChatGPT
-    }, () => {
-      if (chrome.runtime.lastError) {
-        console.error('ChatGPT Compass: Error setting sidepanel options:', chrome.runtime.lastError.message);
-      } else if (isChatGPT) {
-        console.log('ChatGPT Compass: Enabled sidepanel for ChatGPT tab', tabId);
-      }
-    });
+    if (isChatGPT) {
+      console.log('ChatGPT Compass: ChatGPT tab loaded', tabId);
+    }
   }
 });
 
