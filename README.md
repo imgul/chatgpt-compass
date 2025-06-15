@@ -10,6 +10,8 @@ Navigate through your ChatGPT conversations with ease! This Chrome extension ext
 - 🎨 **Beautiful Interface**: Modern, responsive design with glassmorphism effects
 - 📱 **Sidepanel Integration**: Uses Chrome's built-in sidepanel for seamless experience
 - 🔄 **Live Sync**: Messages update in real-time as you continue your conversation
+- 🌈 **Animated Highlights**: Dark vibrant AI-inspired animated borders for selected messages
+- ⚙️ **Configurable**: Customizable highlight duration and animation settings
 
 ## Project Structure
 
@@ -41,22 +43,28 @@ Navigate through your ChatGPT conversations with ease! This Chrome extension ext
    npm install
    ```
 
-2. **Build the Extension**
+2. **Configure Extension (Optional)**
+   See [CONFIG.md](CONFIG.md) for environment variable configuration options.
+
+3. **Build the Extension**
    ```bash
    # For development (with watch mode)
    npm run dev
 
    # For production
    npm run build
+
+   # With custom highlight duration (example)
+   HIGHLIGHT_DURATION_SECONDS=5 npm run build
    ```
 
-3. **Add Icons**
+4. **Add Icons**
    Replace the placeholder icon files in `src/icons/` with actual PNG images:
    - `icon16.png` (16x16 pixels)
    - `icon48.png` (48x48 pixels)
    - `icon128.png` (128x128 pixels)
 
-4. **Load Extension in Chrome**
+5. **Load Extension in Chrome**
    - Open Chrome and go to `chrome://extensions/`
    - Enable "Developer mode" in the top right
    - Click "Load unpacked" and select the `dist` folder

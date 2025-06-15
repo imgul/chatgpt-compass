@@ -1,4 +1,6 @@
 // Content script for extracting user messages from ChatGPT
+import { CONFIG } from '../config/config';
+
 interface UserMessage {
   id: string;
   content: string;
@@ -11,6 +13,7 @@ class ChatGPTMessageExtractor {
   private userMessages: UserMessage[] = [];
   private observer: MutationObserver | null = null;
   private currentHighlightedElement: HTMLElement | null = null;
+  private highlightTimeout: NodeJS.Timeout | null = null;
 
   constructor() {
     this.init();
@@ -123,12 +126,21 @@ class ChatGPTMessageExtractor {
       this.currentHighlightedElement.classList.remove('chatgpt-compass-highlight');
       this.currentHighlightedElement = null;
     }
+    if (this.highlightTimeout) {
+      clearTimeout(this.highlightTimeout);
+      this.highlightTimeout = null;
+    }
   }
 
   private highlightMessage(element: HTMLElement) {
     // Add animated AI-inspired border effect
     this.addHighlightStyles();
     element.classList.add('chatgpt-compass-highlight');
+    
+    // Set timeout to remove highlight after configured duration
+    this.highlightTimeout = setTimeout(() => {
+      this.removeCurrentHighlight();
+    }, CONFIG.HIGHLIGHT_DURATION_SECONDS * 1000);
   }
 
   private addHighlightStyles() {
@@ -152,19 +164,21 @@ class ChatGPTMessageExtractor {
           border-radius: 15px;
           background: linear-gradient(
             45deg,
-            #ff6b6b,
-            #4ecdc4,
-            #45b7d1,
-            #96ceb4,
-            #ffeaa7,
-            #dda0dd,
-            #98d8c8,
-            #f7dc6f,
-            #bb8fce,
-            #85c1e9
+            #1a1a2e,
+            #16213e,
+            #0f3460,
+            #e94560,
+            #f38ba8,
+            #a6e3a1,
+            #94e2d5,
+            #89dceb,
+            #74c7ec,
+            #7287fd,
+            #c6a0f6,
+            #eba0ac
           );
           background-size: 400% 400%;
-          animation: chatgpt-compass-glow 3s linear infinite;
+          animation: chatgpt-compass-glow ${CONFIG.ANIMATION_SPEED_MS}ms linear infinite;
           z-index: -1;
           pointer-events: none;
         }
@@ -201,13 +215,19 @@ class ChatGPTMessageExtractor {
           bottom: -1px;
           background: linear-gradient(
             -45deg,
-            rgba(255, 107, 107, 0.3),
-            rgba(78, 205, 196, 0.3),
-            rgba(69, 183, 209, 0.3),
-            rgba(150, 206, 180, 0.3)
+            rgba(26, 26, 46, 0.6),
+            rgba(233, 69, 96, 0.4),
+            rgba(243, 139, 168, 0.5),
+            rgba(166, 227, 161, 0.4),
+            rgba(148, 226, 213, 0.5),
+            rgba(137, 220, 235, 0.4),
+            rgba(116, 199, 236, 0.5),
+            rgba(114, 135, 253, 0.4),
+            rgba(198, 160, 246, 0.5),
+            rgba(235, 160, 172, 0.4)
           );
           border-radius: 13px;
-          animation: chatgpt-compass-pulse 2s ease-in-out infinite alternate;
+          animation: chatgpt-compass-pulse ${CONFIG.PULSE_SPEED_MS}ms ease-in-out infinite alternate;
           z-index: -1;
           pointer-events: none;
         }

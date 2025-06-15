@@ -1,6 +1,7 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const webpack = require('webpack');
 
 module.exports = {
   entry: {
@@ -40,6 +41,11 @@ module.exports = {
         { from: 'manifest.json', to: 'manifest.json' },
         { from: 'src/icons', to: 'icons' }
       ]
+    }),
+    new webpack.DefinePlugin({
+      'process.env.HIGHLIGHT_DURATION_SECONDS': JSON.stringify(process.env.HIGHLIGHT_DURATION_SECONDS || '3'),
+      'process.env.EXTENSION_NAME': JSON.stringify(process.env.EXTENSION_NAME || 'ChatGPT Compass'),
+      'process.env.EXTENSION_VERSION': JSON.stringify(process.env.EXTENSION_VERSION || '1.0.0')
     })
   ],
   devtool: 'cheap-module-source-map'
