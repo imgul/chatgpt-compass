@@ -4,7 +4,6 @@ import { useBookmarks } from '../BookmarkContext';
 import ThemeSwitcher from '../ThemeSwitcher';
 import { BookmarksPanel } from './BookmarksPanel';
 import { 
-  HiOutlineLocationMarker, 
   HiOutlineSearch, 
   HiOutlineLightningBolt, 
   HiOutlineColorSwatch, 
@@ -206,7 +205,7 @@ export const AppContent: React.FC = () => {
       <header className="header">
         <div className="header-content">
           <div className="header-text">
-            <h1><HiOutlineLocationMarker className="inline mr-2" />ChatGPT Compass</h1>
+            <h1><img src="/icons/icon128.png" alt="ChatGPT Compass" className="inline mr-2 w-6 h-6" />ChatGPT Compass</h1>
             <p className="subtitle">Navigate conversations with AI precision</p>
           </div>
           <ThemeSwitcher />
@@ -218,7 +217,7 @@ export const AppContent: React.FC = () => {
           <div className="guide-container">
             <section className="card welcome-card">
               <div className="logo-section">
-                <h1 className="guide-title"><HiOutlineLocationMarker className="inline mr-2" />ChatGPT Compass</h1>
+                <h1 className="guide-title"><img src="/icons/icon128.png" alt="ChatGPT Compass" className="inline mr-2 w-8 h-8" />ChatGPT Compass</h1>
                 <p className="guide-subtitle">Navigate your conversations with precision</p>
               </div>
             </section>
@@ -261,7 +260,7 @@ export const AppContent: React.FC = () => {
               <h2>✨ Key Features</h2>
               <div className="features-grid">
                 <div className="feature-item">
-                                      <span className="feature-icon"><HiOutlineLocationMarker /></span>
+                  <span className="feature-icon">🧭</span>
                   <div className="feature-text">
                     <h3>Smart Navigation</h3>
                     <p>Instantly jump to any message in long conversations</p>
