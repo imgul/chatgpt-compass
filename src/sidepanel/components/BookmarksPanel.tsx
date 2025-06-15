@@ -3,6 +3,7 @@ import { useBookmarks } from '../BookmarkContext';
 import { useTheme } from '../ThemeContext';
 import { BookmarkCard } from './BookmarkCard';
 import { BookmarkedMessage } from '../../types/Bookmark';
+import { HiOutlineBookmarkAlt, HiOutlineBookmark, HiOutlineInboxIn, HiOutlineLightBulb, HiX } from 'react-icons/hi';
 
 type SortOption = 'recent' | 'oldest' | 'chat' | 'content';
 type FilterOption = 'all' | 'today' | 'week' | 'month';
@@ -93,7 +94,7 @@ export const BookmarksPanel: React.FC = () => {
     <div className={`bookmarks-panel ${theme}`}>
       <div className="bookmarks-header">
         <h2 className="panel-title">
-          📚 Bookmarks
+          <HiOutlineBookmarkAlt className="inline mr-2" />Bookmarks
           {bookmarks.length > 0 && (
             <span className="bookmark-count">({bookmarks.length})</span>
           )}
@@ -115,7 +116,7 @@ export const BookmarksPanel: React.FC = () => {
               onClick={() => setSearchQuery('')}
               title="Clear search"
             >
-              ✕
+              <HiX />
             </button>
           )}
         </div>
@@ -148,11 +149,11 @@ export const BookmarksPanel: React.FC = () => {
       <div className="bookmarks-content">
         {sortedBookmarks.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon">📭</div>
+            <div className="empty-icon"><HiOutlineInboxIn /></div>
             <p className="empty-message">{getEmptyStateMessage()}</p>
             {!searchQuery && filterBy === 'all' && (
               <div className="empty-tip">
-                <p>💡 Tip: Click the bookmark button (📌) on any message to save it for later!</p>
+                <p><HiOutlineLightBulb className="inline mr-1" />Tip: Click the bookmark button (<HiOutlineBookmark className="inline" />) on any message to save it for later!</p>
               </div>
             )}
           </div>

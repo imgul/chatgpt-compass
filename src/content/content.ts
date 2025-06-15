@@ -333,7 +333,7 @@ class ChatGPTMessageExtractor {
     // Create bookmark button
     const bookmarkBtn = document.createElement('button');
     bookmarkBtn.className = 'chatgpt-compass-bookmark-btn';
-    bookmarkBtn.innerHTML = isBookmarked ? '🗑️' : '📌';
+    bookmarkBtn.innerHTML = isBookmarked ? this.getTrashIcon() : this.getBookmarkIcon();
     bookmarkBtn.title = isBookmarked ? 'Remove bookmark' : 'Bookmark this message';
     bookmarkBtn.style.cssText = `
       position: absolute;
@@ -382,29 +382,29 @@ class ChatGPTMessageExtractor {
       if (currentlyBookmarked) {
         // Remove bookmark
         await this.removeBookmark(message.id);
-        bookmarkBtn.innerHTML = '📌';
+        bookmarkBtn.innerHTML = this.getBookmarkIcon();
         bookmarkBtn.title = 'Bookmark this message';
         this.removeBookmarkBorder(message.element);
         
         // Visual feedback
-        bookmarkBtn.innerHTML = '✅';
+        bookmarkBtn.innerHTML = this.getCheckIcon();
         bookmarkBtn.style.background = 'var(--token-main-surface-secondary, #f3f4f6)';
         setTimeout(() => {
-          bookmarkBtn.innerHTML = '📌';
+          bookmarkBtn.innerHTML = this.getBookmarkIcon();
           bookmarkBtn.style.background = 'var(--token-main-surface-primary, #ffffff)';
         }, 1000);
       } else {
         // Add bookmark
         await this.createBookmark(message);
-        bookmarkBtn.innerHTML = '🗑️';
+        bookmarkBtn.innerHTML = this.getTrashIcon();
         bookmarkBtn.title = 'Remove bookmark';
         this.addBookmarkBorder(message.element);
         
         // Visual feedback
-        bookmarkBtn.innerHTML = '✅';
+        bookmarkBtn.innerHTML = this.getCheckIcon();
         bookmarkBtn.style.background = 'var(--token-main-surface-secondary, #f3f4f6)';
         setTimeout(() => {
-          bookmarkBtn.innerHTML = '🗑️';
+          bookmarkBtn.innerHTML = this.getTrashIcon();
           bookmarkBtn.style.background = 'var(--token-main-surface-primary, #ffffff)';
         }, 1000);
       }
@@ -621,7 +621,7 @@ class ChatGPTMessageExtractor {
         // Update bookmark button if it exists
         const bookmarkBtn = message.element.querySelector('.chatgpt-compass-bookmark-btn') as HTMLButtonElement;
         if (bookmarkBtn) {
-          bookmarkBtn.innerHTML = '🗑️';
+          bookmarkBtn.innerHTML = this.getTrashIcon();
           bookmarkBtn.title = 'Remove bookmark';
           console.log('ChatGPT Compass: Updated bookmark button for message', message.id);
         } else {
@@ -643,7 +643,7 @@ class ChatGPTMessageExtractor {
       // Update bookmark button
       const bookmarkBtn = message.element.querySelector('.chatgpt-compass-bookmark-btn') as HTMLButtonElement;
       if (bookmarkBtn) {
-        bookmarkBtn.innerHTML = '🗑️';
+        bookmarkBtn.innerHTML = this.getTrashIcon();
         bookmarkBtn.title = 'Remove bookmark';
       }
     }
@@ -658,7 +658,7 @@ class ChatGPTMessageExtractor {
       // Update bookmark button
       const bookmarkBtn = message.element.querySelector('.chatgpt-compass-bookmark-btn') as HTMLButtonElement;
       if (bookmarkBtn) {
-        bookmarkBtn.innerHTML = '📌';
+        bookmarkBtn.innerHTML = this.getBookmarkIcon();
         bookmarkBtn.title = 'Bookmark this message';
       }
     }
@@ -673,6 +673,24 @@ class ChatGPTMessageExtractor {
         resolve();
       }
     });
+  }
+
+  private getBookmarkIcon(): string {
+    return `<svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+      <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/>
+    </svg>`;
+  }
+
+  private getTrashIcon(): string {
+    return `<svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+      <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+    </svg>`;
+  }
+
+  private getCheckIcon(): string {
+    return `<svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+    </svg>`;
   }
 
   private detectChatGPTTheme(): 'light' | 'dark' {

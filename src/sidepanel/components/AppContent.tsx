@@ -3,6 +3,19 @@ import { useTheme } from '../ThemeContext';
 import { useBookmarks } from '../BookmarkContext';
 import ThemeSwitcher from '../ThemeSwitcher';
 import { BookmarksPanel } from './BookmarksPanel';
+import { 
+  HiOutlineLocationMarker, 
+  HiOutlineSearch, 
+  HiOutlineLightningBolt, 
+  HiOutlineColorSwatch, 
+  HiOutlineRefresh, 
+  HiOutlineFire,
+  HiOutlineChatAlt2,
+  HiOutlineBookmark,
+  HiOutlineBookmarkAlt,
+  HiOutlineTrash,
+  HiOutlineFlag
+} from 'react-icons/hi';
 
 interface TabInfo {
   title: string;
@@ -193,7 +206,7 @@ export const AppContent: React.FC = () => {
       <header className="header">
         <div className="header-content">
           <div className="header-text">
-            <h1>🧭 ChatGPT Compass</h1>
+            <h1><HiOutlineLocationMarker className="inline mr-2" />ChatGPT Compass</h1>
             <p className="subtitle">Navigate conversations with AI precision</p>
           </div>
           <ThemeSwitcher />
@@ -205,13 +218,13 @@ export const AppContent: React.FC = () => {
           <div className="guide-container">
             <section className="card welcome-card">
               <div className="logo-section">
-                <h1 className="guide-title">🧭 ChatGPT Compass</h1>
+                <h1 className="guide-title"><HiOutlineLocationMarker className="inline mr-2" />ChatGPT Compass</h1>
                 <p className="guide-subtitle">Navigate your conversations with precision</p>
               </div>
             </section>
 
             <section className="card info-card">
-              <h2>🎯 How to Use</h2>
+                              <h2><HiOutlineFlag className="inline mr-2" />How to Use</h2>
               <div className="step-list">
                 <div className="step-item">
                   <span className="step-number">1</span>
@@ -248,28 +261,28 @@ export const AppContent: React.FC = () => {
               <h2>✨ Key Features</h2>
               <div className="features-grid">
                 <div className="feature-item">
-                  <span className="feature-icon">🧭</span>
+                                      <span className="feature-icon"><HiOutlineLocationMarker /></span>
                   <div className="feature-text">
                     <h3>Smart Navigation</h3>
                     <p>Instantly jump to any message in long conversations</p>
                   </div>
                 </div>
                 <div className="feature-item">
-                  <span className="feature-icon">🔍</span>
+                                      <span className="feature-icon"><HiOutlineSearch /></span>
                   <div className="feature-text">
                     <h3>Powerful Search</h3>
                     <p>Search through all your messages to find what you need</p>
                   </div>
                 </div>
                 <div className="feature-item">
-                  <span className="feature-icon">⚡</span>
+                                      <span className="feature-icon"><HiOutlineLightningBolt /></span>
                   <div className="feature-text">
                     <h3>Real-time Updates</h3>
                     <p>New messages automatically appear as you chat</p>
                   </div>
                 </div>
                 <div className="feature-item">
-                  <span className="feature-icon">🎨</span>
+                                      <span className="feature-icon"><HiOutlineColorSwatch /></span>
                   <div className="feature-text">
                     <h3>Visual Highlights</h3>
                     <p>Selected messages get vibrant AI-themed border animations</p>
@@ -283,7 +296,7 @@ export const AppContent: React.FC = () => {
                   </div>
                 </div>
                 <div className="feature-item">
-                  <span className="feature-icon">🔄</span>
+                                      <span className="feature-icon"><HiOutlineRefresh /></span>
                   <div className="feature-text">
                     <h3>Live Sync</h3>
                     <p>Messages sync automatically across all tabs</p>
@@ -293,7 +306,7 @@ export const AppContent: React.FC = () => {
             </section>
 
             <section className="card cta-card">
-              <h2>🚀 Ready to Start?</h2>
+                              <h2><HiOutlineFire className="inline mr-2" />Ready to Start?</h2>
               <p>Navigate to ChatGPT to begin using the extension!</p>
               <button 
                 onClick={() => chrome.tabs.create({ url: 'https://chatgpt.com' })}
@@ -312,13 +325,13 @@ export const AppContent: React.FC = () => {
                   className={`tab-button ${activeView === 'messages' ? 'active' : ''}`}
                   onClick={() => setActiveView('messages')}
                 >
-                  💬 Messages ({filteredMessages.length})
+                  <HiOutlineChatAlt2 className="inline mr-1" />Messages ({filteredMessages.length})
                 </button>
                 <button
                   className={`tab-button ${activeView === 'bookmarks' ? 'active' : ''}`}
                   onClick={() => setActiveView('bookmarks')}
                 >
-                  📚 Bookmarks ({bookmarks.length})
+                  <HiOutlineBookmarkAlt className="inline mr-1" />Bookmarks ({bookmarks.length})
                 </button>
               </div>
             </section>
@@ -348,7 +361,7 @@ export const AppContent: React.FC = () => {
                           onClick={() => setSearchType('content')}
                           title="Search by content"
                         >
-                          💬
+                          <HiOutlineChatAlt2 />
                         </button>
                         <button
                           className={`search-type-btn ${searchType === 'number' ? 'active' : ''}`}
@@ -405,7 +418,7 @@ export const AppContent: React.FC = () => {
                                 <span className="message-number">#{originalIndex + 1}</span>
                                 {isBookmarked && (
                                   <span className="bookmark-indicator" title="This message is bookmarked">
-                                    📌
+                                    <HiOutlineBookmark />
                                   </span>
                                 )}
                               </div>
@@ -416,7 +429,7 @@ export const AppContent: React.FC = () => {
                                   onClick={(e) => handleBookmarkToggle(e, message)}
                                   title={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
                                 >
-                                  {isBookmarked ? '🗑️' : '📌'}
+                                  {isBookmarked ? <HiOutlineTrash /> : <HiOutlineBookmark />}
                                 </button>
                               </div>
                             </div>

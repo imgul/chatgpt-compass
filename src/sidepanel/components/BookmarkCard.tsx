@@ -2,6 +2,15 @@ import React, { useState } from 'react';
 import { BookmarkedMessage } from '../../types/Bookmark';
 import { useBookmarks } from '../BookmarkContext';
 import { useTheme } from '../ThemeContext';
+import { 
+  HiOutlineChatAlt2, 
+  HiOutlineBookmark, 
+  HiOutlineLocationMarker, 
+  HiOutlinePencil, 
+  HiOutlineTrash, 
+  HiOutlineClock,
+  HiOutlineDocumentText
+} from 'react-icons/hi';
 
 interface BookmarkCardProps {
   bookmark: BookmarkedMessage;
@@ -62,10 +71,10 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({ bookmark, onEdit }) 
       <div className="bookmark-header">
         <div className="bookmark-meta">
           <span className="chat-title" title={bookmark.chatTitle}>
-            💬 {formatChatTitle(bookmark.chatTitle)}
+            <HiOutlineChatAlt2 className="inline mr-1" />{formatChatTitle(bookmark.chatTitle)}
           </span>
           <span className="bookmark-date">
-            📌 {formatDate(bookmark.bookmarkedAt)}
+            <HiOutlineBookmark className="inline mr-1" />{formatDate(bookmark.bookmarkedAt)}
           </span>
         </div>
         <div className="bookmark-actions">
@@ -74,7 +83,7 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({ bookmark, onEdit }) 
             onClick={handleNavigate}
             title="Navigate to message"
           >
-            🧭
+            <HiOutlineLocationMarker />
           </button>
           {onEdit && (
             <button 
@@ -82,7 +91,7 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({ bookmark, onEdit }) 
               onClick={() => onEdit(bookmark)}
               title="Edit bookmark"
             >
-              ✏️
+              <HiOutlinePencil />
             </button>
           )}
           <button 
@@ -91,7 +100,7 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({ bookmark, onEdit }) 
             disabled={isDeleting}
             title="Remove bookmark"
           >
-            {isDeleting ? '⏳' : '🗑️'}
+            {isDeleting ? <HiOutlineClock /> : <HiOutlineTrash />}
           </button>
         </div>
       </div>
@@ -100,7 +109,7 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({ bookmark, onEdit }) 
         <p className="message-content">{formatContent(bookmark.content)}</p>
         {bookmark.userNote && (
           <div className="user-note">
-            <span className="note-label">📝 Note:</span>
+            <span className="note-label"><HiOutlineDocumentText className="inline mr-1" />Note:</span>
             <p className="note-text">{bookmark.userNote}</p>
           </div>
         )}
