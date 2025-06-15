@@ -569,6 +569,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  color: var(--text-secondary);
 }
 
 .message-bookmark-btn {
@@ -580,6 +581,7 @@ body {
   transition: all 0.2s ease;
   padding: 2px;
   border-radius: 4px;
+  color: var(--text-secondary);
 }
 
 .message-bookmark-btn:hover {
@@ -662,6 +664,7 @@ body {
   font-size: 12px;
   opacity: 0.8;
   animation: bookmark-pulse 2s ease-in-out infinite;
+  color: #f59e0b;
 }
 
 @keyframes bookmark-pulse {
@@ -1122,6 +1125,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--text-secondary);
 }
 
 .action-btn:hover {
@@ -1138,16 +1142,19 @@ body {
 .navigate-btn:hover {
   background: rgba(34, 197, 94, 0.1);
   border-color: rgba(34, 197, 94, 0.3);
+  color: #22c55e;
 }
 
 .edit-btn:hover {
   background: rgba(59, 130, 246, 0.1);
   border-color: rgba(59, 130, 246, 0.3);
+  color: #3b82f6;
 }
 
 .delete-btn:hover {
   background: rgba(239, 68, 68, 0.1);
   border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
 }
 
 .bookmark-content {
