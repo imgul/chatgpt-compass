@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useTheme } from './ThemeContext';
+import ThemeSwitcher from './ThemeSwitcher';
 
 interface TabInfo {
   title: string;
@@ -13,6 +15,7 @@ interface UserMessage {
 }
 
 const App: React.FC = () => {
+  const { resolvedTheme } = useTheme();
   const [currentTab, setCurrentTab] = useState<TabInfo | null>(null);
   const [userMessages, setUserMessages] = useState<UserMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -103,10 +106,15 @@ const App: React.FC = () => {
   );
 
   return (
-    <div className="app">
+    <div className={`app ${resolvedTheme}`}>
       <header className="header">
-        <h1>ChatGPT Compass</h1>
-        <p className="subtitle">Navigate your conversations with ease</p>
+        <div className="header-content">
+          <div className="header-text">
+            <h1>🧭 ChatGPT Compass</h1>
+            <p className="subtitle">Navigate conversations with AI precision</p>
+          </div>
+          <ThemeSwitcher />
+        </div>
       </header>
 
       <main className="main">

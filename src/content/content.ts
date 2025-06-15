@@ -34,6 +34,9 @@ class ChatGPTMessageExtractor {
       } else if (message.type === 'SCROLL_TO_MESSAGE') {
         this.scrollToMessage(message.messageId);
         sendResponse({ success: true });
+      } else if (message.type === 'GET_CHATGPT_THEME') {
+        const theme = this.detectChatGPTTheme();
+        sendResponse({ theme });
       }
     });
 
@@ -286,6 +289,41 @@ class ChatGPTMessageExtractor {
         turnIndex: msg.turnIndex
       }))
     });
+  }
+
+  private detectChatGPTTheme(): 'light' | 'dark' {
+    // Check for ChatGPT's dark mode indicators
+    const body = document.body;
+    const html = document.documentElement;
+    
+    // Check for dark mode classes or attributes
+    if (body.classList.contains('dark') || 
+        html.classList.contains('dark') ||
+        body.getAttribute('data-theme') === 'dark' ||
+        html.getAttribute('data-theme') === 'dark') {
+      return 'dark';
+    }
+    
+    // Check background color as fallback
+    const bodyBg = window.getComputedStyle(body).backgroundColor;
+    const htmlBg = window.getComputedStyle(html).backgroundColor;
+    
+    // Parse RGB values to determine if dark
+    const isDarkBg = (bgColor: string): boolean => {
+      const rgb = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+      if (rgb) {
+        const [, r, g, b] = rgb.map(Number);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        return brightness < 128; // Dark if brightness is less than 50%
+      }
+      return false;
+    };
+    
+    if (isDarkBg(bodyBg) || isDarkBg(htmlBg)) {
+      return 'dark';
+    }
+    
+    return 'light';
   }
 
   public destroy() {
