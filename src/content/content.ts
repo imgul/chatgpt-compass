@@ -160,77 +160,65 @@ class ChatGPTMessageExtractor {
       style.id = 'chatgpt-compass-styles';
       style.textContent = `
         .chatgpt-compass-highlight {
-          position: relative;
-          border: 3px solid transparent !important;
-          background-image: 
-            linear-gradient(var(--bg-token-message-surface, #f0f0f0), var(--bg-token-message-surface, #f0f0f0)),
-            linear-gradient(
-              45deg,
-              #1a1a2e,
-              #16213e,
-              #0f3460,
-              #e94560,
-              #f38ba8,
-              #a6e3a1,
-              #94e2d5,
-              #89dceb,
-              #74c7ec,
-              #7287fd,
-              #c6a0f6,
-              #eba0ac
-            ) !important;
-          background-size: 100% 100%, 400% 400% !important;
-          background-origin: padding-box, border-box !important;
-          background-clip: padding-box, border-box !important;
-          animation: chatgpt-compass-glow ${CONFIG.ANIMATION_SPEED_MS}ms linear infinite !important;
+          position: relative !important;
+          outline: 3px solid #e94560 !important;
+          outline-offset: 2px !important;
+          animation: chatgpt-compass-border-glow ${CONFIG.ANIMATION_SPEED_MS}ms linear infinite !important;
         }
         
-        @keyframes chatgpt-compass-glow {
+        @keyframes chatgpt-compass-border-glow {
           0% {
-            background-position: 0% 50%;
+            outline-color: #e94560;
             filter: hue-rotate(0deg) brightness(1.2);
           }
-          25% {
-            background-position: 100% 50%;
-            filter: hue-rotate(90deg) brightness(1.4);
+          16.66% {
+            outline-color: #f38ba8;
+            filter: hue-rotate(60deg) brightness(1.4);
+          }
+          33.33% {
+            outline-color: #a6e3a1;
+            filter: hue-rotate(120deg) brightness(1.2);
           }
           50% {
-            background-position: 100% 100%;
-            filter: hue-rotate(180deg) brightness(1.2);
+            outline-color: #89dceb;
+            filter: hue-rotate(180deg) brightness(1.4);
           }
-          75% {
-            background-position: 0% 100%;
-            filter: hue-rotate(270deg) brightness(1.4);
+          66.66% {
+            outline-color: #7287fd;
+            filter: hue-rotate(240deg) brightness(1.2);
+          }
+          83.33% {
+            outline-color: #c6a0f6;
+            filter: hue-rotate(300deg) brightness(1.4);
           }
           100% {
-            background-position: 0% 50%;
+            outline-color: #e94560;
             filter: hue-rotate(360deg) brightness(1.2);
           }
         }
         
+
+        
         .chatgpt-compass-highlight::after {
           content: '';
           position: absolute;
-          top: -1px;
-          left: -1px;
-          right: -1px;
-          bottom: -1px;
+          top: -2px;
+          left: -2px;
+          right: -2px;
+          bottom: -2px;
           border-radius: inherit;
           background: linear-gradient(
             -45deg,
-            rgba(233, 69, 96, 0.3),
-            rgba(243, 139, 168, 0.2),
-            rgba(166, 227, 161, 0.3),
-            rgba(148, 226, 213, 0.2),
-            rgba(137, 220, 235, 0.3),
-            rgba(116, 199, 236, 0.2),
-            rgba(114, 135, 253, 0.3),
-            rgba(198, 160, 246, 0.2)
+            rgba(233, 69, 96, 0.4),
+            rgba(166, 227, 161, 0.4),
+            rgba(137, 220, 235, 0.4),
+            rgba(114, 135, 253, 0.4)
           );
           background-size: 200% 200%;
           animation: chatgpt-compass-pulse ${CONFIG.PULSE_SPEED_MS}ms ease-in-out infinite alternate;
-          z-index: -1;
+          z-index: -2;
           pointer-events: none;
+          opacity: 0.6;
         }
         
         @keyframes chatgpt-compass-pulse {
