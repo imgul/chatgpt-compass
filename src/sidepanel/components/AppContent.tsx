@@ -3,17 +3,20 @@ import { useTheme } from '../ThemeContext';
 import { useBookmarks } from '../BookmarkContext';
 import ThemeSwitcher from '../ThemeSwitcher';
 import { BookmarksPanel } from './BookmarksPanel';
-import { 
-  HiOutlineSearch, 
-  HiOutlineLightningBolt, 
-  HiOutlineColorSwatch, 
-  HiOutlineRefresh, 
+import { FolderManager } from './FolderManager';
+import {
+  HiOutlineSearch,
+  HiOutlineLightningBolt,
+  HiOutlineColorSwatch,
+  HiOutlineRefresh,
   HiOutlineFire,
   HiOutlineChatAlt2,
   HiOutlineBookmark,
   HiOutlineBookmarkAlt,
   HiOutlineTrash,
-  HiOutlineFlag
+  HiOutlineFlag,
+  HiOutlineFolder,
+  HiOutlineCog
 } from 'react-icons/hi';
 
 interface TabInfo {
@@ -32,7 +35,7 @@ export const AppContent: React.FC = () => {
   const { resolvedTheme } = useTheme();
   const { isMessageBookmarked, getBookmarkForMessage, bookmarks, addBookmark, removeBookmark } = useBookmarks();
   const [refreshKey, setRefreshKey] = React.useState(0);
-  
+
   // Debug logging
   React.useEffect(() => {
     console.log('AppContent: bookmarks count:', bookmarks.length);
@@ -43,7 +46,7 @@ export const AppContent: React.FC = () => {
   const [userMessages, setUserMessages] = useState<UserMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeView, setActiveView] = useState<'messages' | 'bookmarks'>('messages');
+  const [activeView, setActiveView] = useState<'messages' | 'bookmarks' | 'folders'>('messages');
   const [searchType, setSearchType] = useState<'content' | 'number'>('content');
   const [caseSensitive, setCaseSensitive] = useState(false);
 
@@ -111,20 +114,20 @@ export const AppContent: React.FC = () => {
 
   const handleBookmarkToggle = async (e: React.MouseEvent, message: UserMessage) => {
     e.stopPropagation(); // Prevent message navigation
-    
-    const isBookmarked = currentTab?.url ? 
-      isMessageBookmarked(message.id, currentTab.url) : 
+
+    const isBookmarked = currentTab?.url ?
+      isMessageBookmarked(message.id, currentTab.url) :
       isMessageBookmarked(message.id);
 
     if (isBookmarked) {
       // Remove bookmark
-      const bookmark = currentTab?.url ? 
-        getBookmarkForMessage(message.id, currentTab.url) : 
+      const bookmark = currentTab?.url ?
+        getBookmarkForMessage(message.id, currentTab.url) :
         getBookmarkForMessage(message.id);
-      
+
       if (bookmark) {
         await removeBookmark(bookmark.id);
-        
+
         // Notify content script to update visual state
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
           if (tabs[0]?.id) {
@@ -134,7 +137,7 @@ export const AppContent: React.FC = () => {
             });
           }
         });
-        
+
         // Force re-render to update bookmark button states
         setRefreshKey(prev => prev + 1);
       }
@@ -142,7 +145,7 @@ export const AppContent: React.FC = () => {
       // Add bookmark
       const chatTitle = currentTab?.title || 'ChatGPT Conversation';
       const chatUrl = currentTab?.url || window.location.href;
-      
+
       await addBookmark({
         messageId: message.id,
         content: message.content,
@@ -151,25 +154,25 @@ export const AppContent: React.FC = () => {
         turnIndex: message.turnIndex,
         timestamp: message.timestamp
       });
-      
-              // Notify content script to update visual state
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          if (tabs[0]?.id) {
-            chrome.tabs.sendMessage(tabs[0].id, {
-              type: 'BOOKMARK_ADDED',
-              messageId: message.id
-            });
-          }
-        });
-        
-        // Force re-render to update bookmark button states
-        setRefreshKey(prev => prev + 1);
+
+      // Notify content script to update visual state
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]?.id) {
+          chrome.tabs.sendMessage(tabs[0].id, {
+            type: 'BOOKMARK_ADDED',
+            messageId: message.id
+          });
+        }
+      });
+
+      // Force re-render to update bookmark button states
+      setRefreshKey(prev => prev + 1);
     }
   };
 
   const filteredMessages = userMessages.filter((message, index) => {
     if (!searchTerm) return true;
-    
+
     if (searchType === 'number') {
       // Search by message number (1-based index)
       const messageNumber = (index + 1).toString();
@@ -188,15 +191,15 @@ export const AppContent: React.FC = () => {
   };
 
   const formatTime = (timestamp: number) => {
-    return new Date(timestamp).toLocaleTimeString('en-US', { 
-      hour12: false, 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return new Date(timestamp).toLocaleTimeString('en-US', {
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
   const isChatGPT = currentTab?.url && (
-    currentTab.url.includes('chatgpt.com') || 
+    currentTab.url.includes('chatgpt.com') ||
     currentTab.url.includes('chat.openai.com')
   );
 
@@ -223,7 +226,7 @@ export const AppContent: React.FC = () => {
             </section>
 
             <section className="card info-card">
-                              <h2><HiOutlineFlag className="inline mr-2" />How to Use</h2>
+              <h2><HiOutlineFlag className="inline mr-2" />How to Use</h2>
               <div className="step-list">
                 <div className="step-item">
                   <span className="step-number">1</span>
@@ -267,21 +270,21 @@ export const AppContent: React.FC = () => {
                   </div>
                 </div>
                 <div className="feature-item">
-                                      <span className="feature-icon"><HiOutlineSearch /></span>
+                  <span className="feature-icon"><HiOutlineSearch /></span>
                   <div className="feature-text">
                     <h3>Powerful Search</h3>
                     <p>Search through all your messages to find what you need</p>
                   </div>
                 </div>
                 <div className="feature-item">
-                                      <span className="feature-icon"><HiOutlineLightningBolt /></span>
+                  <span className="feature-icon"><HiOutlineLightningBolt /></span>
                   <div className="feature-text">
                     <h3>Real-time Updates</h3>
                     <p>New messages automatically appear as you chat</p>
                   </div>
                 </div>
                 <div className="feature-item">
-                                      <span className="feature-icon"><HiOutlineColorSwatch /></span>
+                  <span className="feature-icon"><HiOutlineColorSwatch /></span>
                   <div className="feature-text">
                     <h3>Visual Highlights</h3>
                     <p>Selected messages get vibrant AI-themed border animations</p>
@@ -295,7 +298,7 @@ export const AppContent: React.FC = () => {
                   </div>
                 </div>
                 <div className="feature-item">
-                                      <span className="feature-icon"><HiOutlineRefresh /></span>
+                  <span className="feature-icon"><HiOutlineRefresh /></span>
                   <div className="feature-text">
                     <h3>Live Sync</h3>
                     <p>Messages sync automatically across all tabs</p>
@@ -305,9 +308,9 @@ export const AppContent: React.FC = () => {
             </section>
 
             <section className="card cta-card">
-                              <h2><HiOutlineFire className="inline mr-2" />Ready to Start?</h2>
+              <h2><HiOutlineFire className="inline mr-2" />Ready to Start?</h2>
               <p>Navigate to ChatGPT to begin using the extension!</p>
-              <button 
+              <button
                 onClick={() => chrome.tabs.create({ url: 'https://chatgpt.com' })}
                 className="btn btn-primary cta-button"
               >
@@ -331,6 +334,12 @@ export const AppContent: React.FC = () => {
                   onClick={() => setActiveView('bookmarks')}
                 >
                   <HiOutlineBookmarkAlt className="inline mr-1" />Bookmarks ({bookmarks.length})
+                </button>
+                <button
+                  className={`tab-button ${activeView === 'folders' ? 'active' : ''}`}
+                  onClick={() => setActiveView('folders')}
+                >
+                  <HiOutlineFolder className="inline mr-1" />Folders
                 </button>
               </div>
             </section>
@@ -390,8 +399,8 @@ export const AppContent: React.FC = () => {
                   ) : filteredMessages.length === 0 ? (
                     <div className="empty-state">
                       <p>
-                        {searchTerm 
-                          ? 'No messages match your search.' 
+                        {searchTerm
+                          ? 'No messages match your search.'
                           : 'No messages found. Start a conversation with ChatGPT!'
                         }
                       </p>
@@ -399,13 +408,13 @@ export const AppContent: React.FC = () => {
                   ) : (
                     <div className="message-list">
                       {filteredMessages.map((message) => {
-                        const isBookmarked = currentTab?.url ? 
-                          isMessageBookmarked(message.id, currentTab.url) : 
+                        const isBookmarked = currentTab?.url ?
+                          isMessageBookmarked(message.id, currentTab.url) :
                           isMessageBookmarked(message.id);
-                        
+
                         // Find original index to keep message numbers consistent
                         const originalIndex = userMessages.findIndex(m => m.id === message.id);
-                        
+
                         return (
                           <div
                             key={message.id}
@@ -445,8 +454,12 @@ export const AppContent: React.FC = () => {
                   )}
                 </section>
               </>
-            ) : (
+            ) : activeView === 'bookmarks' ? (
               <BookmarksPanel />
+            ) : (
+              <section className="card">
+                <FolderManager />
+              </section>
             )}
           </>
         )}

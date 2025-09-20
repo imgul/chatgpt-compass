@@ -2,29 +2,75 @@ import React, { useState, useMemo } from 'react';
 import { useBookmarks } from '../BookmarkContext';
 import { useTheme } from '../ThemeContext';
 import { BookmarkCard } from './BookmarkCard';
+import { FolderCard } from './FolderCard';
+import { FolderSelector } from './FolderSelector';
 import { BookmarkedMessage } from '../../types/Bookmark';
-import { HiOutlineBookmarkAlt, HiOutlineBookmark, HiOutlineInboxIn, HiOutlineLightBulb, HiX } from 'react-icons/hi';
+import {
+  HiOutlineBookmarkAlt,
+  HiOutlineBookmark,
+  HiOutlineInboxIn,
+  HiOutlineLightBulb,
+  HiX,
+  HiOutlineFolder,
+  HiOutlineFolderOpen,
+  HiChevronLeft
+} from 'react-icons/hi';
 
 type SortOption = 'recent' | 'oldest' | 'chat' | 'content';
 type FilterOption = 'all' | 'today' | 'week' | 'month';
+type ViewMode = 'all' | 'folders' | 'folder';
 
 export const BookmarksPanel: React.FC = () => {
-  const { bookmarks, loading, searchBookmarks } = useBookmarks();
+  const {
+    bookmarks,
+    folders,
+    loading,
+    searchBookmarks,
+    getBookmarksByFolder,
+    getUnfolderedBookmarks,
+    moveToFolder,
+    createFolder
+  } = useBookmarks();
   const { theme } = useTheme();
-  
+
   // Debug logging
   React.useEffect(() => {
     console.log('BookmarksPanel: bookmarks updated:', bookmarks.length, bookmarks);
   }, [bookmarks]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
+  const [viewMode, setViewMode] = useState<ViewMode>('all');
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingBookmark, setEditingBookmark] = useState<BookmarkedMessage | null>(null);
+  const [selectedBookmarkForMove, setSelectedBookmarkForMove] = useState<string | null>(null);
 
-  // Filter bookmarks by date
+  // Filter bookmarks by date and view mode
   const filteredBookmarks = useMemo(() => {
-    let filtered = searchQuery ? searchBookmarks(searchQuery) : bookmarks;
+    let filtered: BookmarkedMessage[] = [];
+
+    if (viewMode === 'all') {
+      filtered = searchQuery ? searchBookmarks(searchQuery) : bookmarks;
+    } else if (viewMode === 'folder' && selectedFolderId) {
+      const folderBookmarks = getBookmarksByFolder(selectedFolderId);
+      filtered = searchQuery ? folderBookmarks.filter(b =>
+        b.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        b.chatTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        b.userNote?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        b.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+      ) : folderBookmarks;
+    } else if (viewMode === 'folders') {
+      // Show unfoldered bookmarks when in folders view but no specific folder selected
+      const unfolderedBookmarks = getUnfolderedBookmarks();
+      filtered = searchQuery ? unfolderedBookmarks.filter(b =>
+        b.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        b.chatTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        b.userNote?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        b.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+      ) : unfolderedBookmarks;
+    }
 
     const now = Date.now();
     const oneDay = 24 * 60 * 60 * 1000;
@@ -44,7 +90,7 @@ export const BookmarksPanel: React.FC = () => {
     }
 
     return filtered;
-  }, [bookmarks, searchQuery, filterBy, searchBookmarks]);
+  }, [bookmarks, searchQuery, filterBy, viewMode, selectedFolderId, searchBookmarks, getBookmarksByFolder, getUnfolderedBookmarks]);
 
   // Sort bookmarks
   const sortedBookmarks = useMemo(() => {
@@ -69,14 +115,70 @@ export const BookmarksPanel: React.FC = () => {
     setShowEditModal(true);
   };
 
+  const handleFolderSelect = (folderId: string) => {
+    setSelectedFolderId(folderId);
+    setViewMode('folder');
+  };
+
+  const handleBackToFolders = () => {
+    setSelectedFolderId(null);
+    setViewMode('folders');
+  };
+
+  const handleBackToAll = () => {
+    setSelectedFolderId(null);
+    setViewMode('all');
+  };
+
+  const handleMoveToFolder = async (bookmarkId: string, newFolderId?: string) => {
+    try {
+      await moveToFolder(bookmarkId, newFolderId);
+      setSelectedBookmarkForMove(null);
+    } catch (error) {
+      console.error('Error moving bookmark to folder:', error);
+    }
+  };
+
+  const handleCreateFolderAndMove = async (name: string, color: string, icon?: string) => {
+    if (!selectedBookmarkForMove) return;
+
+    try {
+      const newFolder = await createFolder(name, color, icon);
+      await moveToFolder(selectedBookmarkForMove, newFolder.id);
+      setSelectedBookmarkForMove(null);
+    } catch (error) {
+      console.error('Error creating folder and moving bookmark:', error);
+    }
+  };
+
   const getEmptyStateMessage = () => {
     if (searchQuery) {
       return `No bookmarks found for "${searchQuery}"`;
     }
-    if (filterBy !== 'all') {
-      return `No bookmarks found in the selected time period`;
+
+    if (viewMode === 'folder' && selectedFolderId) {
+      const folder = folders.find(f => f.id === selectedFolderId);
+      return `No bookmarks in "${folder?.name || 'Unknown'}" folder`;
     }
-    return 'No bookmarks yet. Start bookmarking messages to see them here!';
+
+    if (viewMode === 'folders') {
+      return 'No unorganized bookmarks. All bookmarks are in folders.';
+    }
+
+    return 'No bookmarks yet! Start saving interesting messages from your ChatGPT conversations.';
+  };
+
+  const getCurrentViewTitle = () => {
+    if (viewMode === 'folder' && selectedFolderId) {
+      const folder = folders.find(f => f.id === selectedFolderId);
+      return folder?.name || 'Unknown Folder';
+    }
+
+    if (viewMode === 'folders') {
+      return 'Unorganized Bookmarks';
+    }
+
+    return 'All Bookmarks';
   };
 
   if (loading) {
@@ -94,11 +196,54 @@ export const BookmarksPanel: React.FC = () => {
     <div className={`bookmarks-panel ${theme}`}>
       <div className="bookmarks-header">
         <h2 className="panel-title">
-          <HiOutlineBookmarkAlt className="inline mr-2" />Bookmarks
-          {bookmarks.length > 0 && (
-            <span className="bookmark-count">({bookmarks.length})</span>
+          <HiOutlineBookmarkAlt className="inline mr-2" />
+          {getCurrentViewTitle()}
+          {(viewMode === 'all' ? bookmarks.length : filteredBookmarks.length) > 0 && (
+            <span className="bookmark-count">
+              ({viewMode === 'all' ? bookmarks.length : filteredBookmarks.length})
+            </span>
           )}
         </h2>
+
+        {/* Navigation buttons */}
+        <div className="view-navigation">
+          {viewMode === 'folder' && (
+            <button
+              onClick={handleBackToFolders}
+              className="nav-button"
+              title="Back to folders"
+            >
+              <HiChevronLeft className="w-4 h-4" />
+            </button>
+          )}
+          {viewMode === 'folders' && (
+            <button
+              onClick={handleBackToAll}
+              className="nav-button"
+              title="Show all bookmarks"
+            >
+              <HiChevronLeft className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* View mode selector */}
+      <div className="view-mode-selector">
+        <button
+          onClick={() => setViewMode('all')}
+          className={`view-mode-btn ${viewMode === 'all' ? 'active' : ''}`}
+        >
+          <HiOutlineBookmark className="w-4 h-4" />
+          All Bookmarks
+        </button>
+        <button
+          onClick={() => setViewMode('folders')}
+          className={`view-mode-btn ${viewMode === 'folders' || viewMode === 'folder' ? 'active' : ''}`}
+        >
+          <HiOutlineFolder className="w-4 h-4" />
+          By Folders
+        </button>
       </div>
 
       <div className="bookmarks-controls">
@@ -147,33 +292,103 @@ export const BookmarksPanel: React.FC = () => {
       </div>
 
       <div className="bookmarks-content">
-        {sortedBookmarks.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon"><HiOutlineInboxIn /></div>
-            <p className="empty-message">{getEmptyStateMessage()}</p>
-            {!searchQuery && filterBy === 'all' && (
-              <div className="empty-tip">
-                <p><HiOutlineLightBulb className="inline mr-1" />Tip: Click the bookmark button (<HiOutlineBookmark className="inline" />) on any message to save it for later!</p>
+        {/* Folder view - show folders list */}
+        {viewMode === 'folders' && !selectedFolderId && (
+          <div className="folders-list">
+            {folders.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon"><HiOutlineFolder /></div>
+                <p className="empty-message">No folders created yet</p>
+                <p className="empty-tip">Create folders to organize your bookmarks</p>
+              </div>
+            ) : (
+              <div className="folder-cards">
+                {folders.map(folder => (
+                  <FolderCard
+                    key={folder.id}
+                    folder={folder}
+                    onClick={() => handleFolderSelect(folder.id)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Show unfoldered bookmarks */}
+            {getUnfolderedBookmarks().length > 0 && (
+              <div className="unfoldered-section">
+                <h3 className="section-title">Unorganized Bookmarks</h3>
+                <div className="bookmarks-list">
+                  {getUnfolderedBookmarks().map((bookmark) => (
+                    <BookmarkCard
+                      key={bookmark.id}
+                      bookmark={bookmark}
+                      onEdit={handleEditBookmark}
+                      onMoveToFolder={setSelectedBookmarkForMove}
+                    />
+                  ))}
+                </div>
               </div>
             )}
           </div>
-        ) : (
-          <div className="bookmarks-list">
-            {sortedBookmarks.map((bookmark) => (
-              <BookmarkCard
-                key={bookmark.id}
-                bookmark={bookmark}
-                onEdit={handleEditBookmark}
-              />
-            ))}
-          </div>
+        )}
+
+        {/* Regular bookmark list view */}
+        {(viewMode === 'all' || viewMode === 'folder') && (
+          <>
+            {sortedBookmarks.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon"><HiOutlineInboxIn /></div>
+                <p className="empty-message">{getEmptyStateMessage()}</p>
+                {!searchQuery && filterBy === 'all' && viewMode === 'all' && (
+                  <div className="empty-tip">
+                    <p><HiOutlineLightBulb className="inline mr-1" />Tip: Click the bookmark button (<HiOutlineBookmark className="inline" />) on any message to save it for later!</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="bookmarks-list">
+                {sortedBookmarks.map((bookmark) => (
+                  <BookmarkCard
+                    key={bookmark.id}
+                    bookmark={bookmark}
+                    onEdit={handleEditBookmark}
+                    onMoveToFolder={setSelectedBookmarkForMove}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
 
+      {/* Folder selector modal for moving bookmarks */}
+      {selectedBookmarkForMove && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>Move bookmark to folder</h3>
+            <FolderSelector
+              selectedFolderId={undefined}
+              onFolderSelect={(folderId) => handleMoveToFolder(selectedBookmarkForMove, folderId)}
+              onCreateFolder={handleCreateFolderAndMove}
+            />
+            <button
+              onClick={() => setSelectedBookmarkForMove(null)}
+              className="cancel-button"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Show results summary */}
-      {sortedBookmarks.length > 0 && (
+      {sortedBookmarks.length > 0 && (viewMode === 'all' || viewMode === 'folder') && (
         <div className="results-summary">
-          Showing {sortedBookmarks.length} of {bookmarks.length} bookmarks
+          Showing {sortedBookmarks.length} of {
+            viewMode === 'all' ? bookmarks.length :
+              viewMode === 'folder' && selectedFolderId ? getBookmarksByFolder(selectedFolderId).length :
+                filteredBookmarks.length
+          } bookmarks
         </div>
       )}
     </div>

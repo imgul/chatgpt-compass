@@ -2,29 +2,35 @@ import React, { useState } from 'react';
 import { BookmarkedMessage } from '../../types/Bookmark';
 import { useBookmarks } from '../BookmarkContext';
 import { useTheme } from '../ThemeContext';
-import { 
-  HiOutlineChatAlt2, 
-  HiOutlineBookmark, 
-  HiOutlineLocationMarker, 
-  HiOutlinePencil, 
-  HiOutlineTrash, 
+import {
+  HiOutlineChatAlt2,
+  HiOutlineBookmark,
+  HiOutlineLocationMarker,
+  HiOutlinePencil,
+  HiOutlineTrash,
   HiOutlineClock,
-  HiOutlineDocumentText
+  HiOutlineDocumentText,
+  HiOutlineFolder,
+  HiOutlineFolderAdd
 } from 'react-icons/hi';
 
 interface BookmarkCardProps {
   bookmark: BookmarkedMessage;
   onEdit?: (bookmark: BookmarkedMessage) => void;
+  onMoveToFolder?: (bookmarkId: string) => void;
 }
 
-export const BookmarkCard: React.FC<BookmarkCardProps> = ({ bookmark, onEdit }) => {
-  const { removeBookmark, navigateToBookmark } = useBookmarks();
+export const BookmarkCard: React.FC<BookmarkCardProps> = ({ bookmark, onEdit, onMoveToFolder }) => {
+  const { removeBookmark, navigateToBookmark, folders } = useBookmarks();
   const { theme } = useTheme();
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Get folder information if bookmark is in a folder
+  const folder = bookmark.folderId ? folders.find(f => f.id === bookmark.folderId) : null;
+
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to remove this bookmark?')) return;
-    
+
     setIsDeleting(true);
     try {
       await removeBookmark(bookmark.id);
@@ -73,20 +79,35 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({ bookmark, onEdit }) 
           <span className="chat-title" title={bookmark.chatTitle}>
             <HiOutlineChatAlt2 className="inline mr-1" />{formatChatTitle(bookmark.chatTitle)}
           </span>
+          {folder && (
+            <span className="folder-info" title={folder.name}>
+              <HiOutlineFolder className="inline mr-1" style={{ color: folder.color }} />
+              {folder.name}
+            </span>
+          )}
           <span className="bookmark-date">
             <HiOutlineBookmark className="inline mr-1" />{formatDate(bookmark.bookmarkedAt)}
           </span>
         </div>
         <div className="bookmark-actions">
-          <button 
+          <button
             className="action-btn navigate-btn"
             onClick={handleNavigate}
             title="Navigate to message"
           >
             <HiOutlineLocationMarker />
           </button>
+          {onMoveToFolder && (
+            <button
+              className="action-btn folder-btn"
+              onClick={() => onMoveToFolder(bookmark.id)}
+              title="Move to folder"
+            >
+              <HiOutlineFolderAdd />
+            </button>
+          )}
           {onEdit && (
-            <button 
+            <button
               className="action-btn edit-btn"
               onClick={() => onEdit(bookmark)}
               title="Edit bookmark"
@@ -94,7 +115,7 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({ bookmark, onEdit }) 
               <HiOutlinePencil />
             </button>
           )}
-          <button 
+          <button
             className="action-btn delete-btn"
             onClick={handleDelete}
             disabled={isDeleting}
@@ -107,6 +128,18 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({ bookmark, onEdit }) 
 
       <div className="bookmark-content">
         <p className="message-content">{formatContent(bookmark.content)}</p>
+        {folder && (
+          <div className="folder-info">
+            <span className="folder-label">
+              <HiOutlineFolder className="inline mr-1" />
+              <div
+                className="folder-indicator"
+                style={{ backgroundColor: folder.color }}
+              ></div>
+              {folder.name}
+            </span>
+          </div>
+        )}
         {bookmark.userNote && (
           <div className="user-note">
             <span className="note-label"><HiOutlineDocumentText className="inline mr-1" />Note:</span>

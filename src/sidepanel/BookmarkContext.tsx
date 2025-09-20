@@ -5,16 +5,19 @@ interface BookmarkContextType {
   bookmarks: BookmarkedMessage[];
   folders: BookmarkFolder[];
   loading: boolean;
-  addBookmark: (message: Omit<BookmarkedMessage, 'id' | 'bookmarkedAt'>) => Promise<void>;
+  addBookmark: (message: Omit<BookmarkedMessage, 'id' | 'bookmarkedAt'>, folderId?: string) => Promise<void>;
   removeBookmark: (bookmarkId: string) => Promise<void>;
   updateBookmark: (bookmarkId: string, updates: Partial<BookmarkedMessage>) => Promise<void>;
-  createFolder: (name: string, color: string) => Promise<BookmarkFolder>;
+  createFolder: (name: string, color: string, icon?: string) => Promise<BookmarkFolder>;
+  updateFolder: (folderId: string, updates: Partial<Omit<BookmarkFolder, 'id' | 'createdAt' | 'bookmarkIds'>>) => Promise<void>;
   deleteFolder: (folderId: string) => Promise<void>;
   addToFolder: (bookmarkId: string, folderId: string) => Promise<void>;
   removeFromFolder: (bookmarkId: string, folderId: string) => Promise<void>;
+  moveToFolder: (bookmarkId: string, newFolderId?: string) => Promise<void>;
   searchBookmarks: (query: string) => BookmarkedMessage[];
   getBookmarksByChat: (chatUrl: string) => BookmarkedMessage[];
   getBookmarksByFolder: (folderId: string) => BookmarkedMessage[];
+  getUnfolderedBookmarks: () => BookmarkedMessage[];
   navigateToBookmark: (bookmark: BookmarkedMessage) => Promise<void>;
   isMessageBookmarked: (messageId: string, chatUrl?: string) => boolean;
   getBookmarkForMessage: (messageId: string, chatUrl?: string) => BookmarkedMessage | null;
@@ -87,12 +90,13 @@ export const BookmarkProvider: React.FC<BookmarkProviderProps> = ({ children }) 
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
   };
 
-  const addBookmark = async (messageData: Omit<BookmarkedMessage, 'id' | 'bookmarkedAt'>) => {
+  const addBookmark = async (messageData: Omit<BookmarkedMessage, 'id' | 'bookmarkedAt'>, folderId?: string) => {
     const id = generateId();
     const bookmark: BookmarkedMessage = {
       ...messageData,
       id,
-      bookmarkedAt: Date.now()
+      bookmarkedAt: Date.now(),
+      folderId // Add folder assignment
     };
 
     const newStorage = {
@@ -109,6 +113,17 @@ export const BookmarkProvider: React.FC<BookmarkProviderProps> = ({ children }) 
         }
       }
     };
+
+    // If assigned to a folder, also add to folder's bookmarkIds
+    if (folderId && storage.folders[folderId]) {
+      newStorage.folders = {
+        ...storage.folders,
+        [folderId]: {
+          ...storage.folders[folderId],
+          bookmarkIds: [...storage.folders[folderId].bookmarkIds, id]
+        }
+      };
+    }
 
     await saveStorage(newStorage);
   };
@@ -151,12 +166,13 @@ export const BookmarkProvider: React.FC<BookmarkProviderProps> = ({ children }) 
     await saveStorage(newStorage);
   };
 
-  const createFolder = async (name: string, color: string): Promise<BookmarkFolder> => {
+  const createFolder = async (name: string, color: string, icon?: string): Promise<BookmarkFolder> => {
     const id = generateId();
     const folder: BookmarkFolder = {
       id,
       name,
       color,
+      icon,
       createdAt: Date.now(),
       bookmarkIds: []
     };
@@ -171,6 +187,22 @@ export const BookmarkProvider: React.FC<BookmarkProviderProps> = ({ children }) 
 
     await saveStorage(newStorage);
     return folder;
+  };
+
+  const updateFolder = async (folderId: string, updates: Partial<Omit<BookmarkFolder, 'id' | 'createdAt' | 'bookmarkIds'>>) => {
+    const existingFolder = storage.folders[folderId];
+    if (!existingFolder) return;
+
+    const updatedFolder = { ...existingFolder, ...updates };
+    const newStorage = {
+      ...storage,
+      folders: {
+        ...storage.folders,
+        [folderId]: updatedFolder
+      }
+    };
+
+    await saveStorage(newStorage);
   };
 
   const deleteFolder = async (folderId: string) => {
@@ -214,15 +246,69 @@ export const BookmarkProvider: React.FC<BookmarkProviderProps> = ({ children }) 
       bookmarkIds: folder.bookmarkIds.filter(id => id !== bookmarkId)
     };
 
+    // Also remove folderId from bookmark
+    const bookmark = storage.bookmarks[bookmarkId];
+    const updatedBookmark = bookmark ? { ...bookmark, folderId: undefined } : null;
+
     const newStorage = {
       ...storage,
       folders: {
         ...storage.folders,
         [folderId]: updatedFolder
+      },
+      bookmarks: updatedBookmark ? {
+        ...storage.bookmarks,
+        [bookmarkId]: updatedBookmark
+      } : storage.bookmarks
+    };
+
+    await saveStorage(newStorage);
+  };
+
+  const moveToFolder = async (bookmarkId: string, newFolderId?: string) => {
+    const bookmark = storage.bookmarks[bookmarkId];
+    if (!bookmark) return;
+
+    // Remove from current folder if exists
+    const currentFolderId = bookmark.folderId;
+    let newFolders = { ...storage.folders };
+
+    if (currentFolderId && newFolders[currentFolderId]) {
+      newFolders[currentFolderId] = {
+        ...newFolders[currentFolderId],
+        bookmarkIds: newFolders[currentFolderId].bookmarkIds.filter(id => id !== bookmarkId)
+      };
+    }
+
+    // Add to new folder if specified
+    if (newFolderId && newFolders[newFolderId]) {
+      if (!newFolders[newFolderId].bookmarkIds.includes(bookmarkId)) {
+        newFolders[newFolderId] = {
+          ...newFolders[newFolderId],
+          bookmarkIds: [...newFolders[newFolderId].bookmarkIds, bookmarkId]
+        };
+      }
+    }
+
+    // Update bookmark's folderId
+    const updatedBookmark = { ...bookmark, folderId: newFolderId };
+
+    const newStorage = {
+      ...storage,
+      folders: newFolders,
+      bookmarks: {
+        ...storage.bookmarks,
+        [bookmarkId]: updatedBookmark
       }
     };
 
     await saveStorage(newStorage);
+  };
+
+  const getUnfolderedBookmarks = (): BookmarkedMessage[] => {
+    return Object.values(storage.bookmarks)
+      .filter(bookmark => !bookmark.folderId)
+      .sort((a, b) => b.bookmarkedAt - a.bookmarkedAt);
   };
 
   const searchBookmarks = (query: string): BookmarkedMessage[] => {
@@ -244,7 +330,7 @@ export const BookmarkProvider: React.FC<BookmarkProviderProps> = ({ children }) 
   const getBookmarksByFolder = (folderId: string): BookmarkedMessage[] => {
     const folder = storage.folders[folderId];
     if (!folder) return [];
-    
+
     return folder.bookmarkIds
       .map(id => storage.bookmarks[id])
       .filter(Boolean)
@@ -255,7 +341,7 @@ export const BookmarkProvider: React.FC<BookmarkProviderProps> = ({ children }) 
     try {
       // Get current tab
       const [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      
+
       if (currentTab.url === bookmark.chatUrl) {
         // Same chat, just scroll to message
         await chrome.tabs.sendMessage(currentTab.id!, {
@@ -266,7 +352,7 @@ export const BookmarkProvider: React.FC<BookmarkProviderProps> = ({ children }) 
       } else {
         // Different chat, navigate to URL first
         await chrome.tabs.update(currentTab.id!, { url: bookmark.chatUrl });
-        
+
         // Wait for page to load, then scroll to message
         setTimeout(async () => {
           try {
@@ -315,12 +401,15 @@ export const BookmarkProvider: React.FC<BookmarkProviderProps> = ({ children }) 
     removeBookmark,
     updateBookmark,
     createFolder,
+    updateFolder,
     deleteFolder,
     addToFolder,
     removeFromFolder,
+    moveToFolder,
     searchBookmarks,
     getBookmarksByChat,
     getBookmarksByFolder,
+    getUnfolderedBookmarks,
     navigateToBookmark,
     isMessageBookmarked,
     getBookmarkForMessage
