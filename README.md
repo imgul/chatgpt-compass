@@ -9,6 +9,30 @@
 
 **ChatGPT Compass** is a powerful Chrome extension that transforms how you navigate and manage your ChatGPT conversations. Built with modern web technologies and featuring a stunning AI-inspired interface, it provides seamless message tracking, bookmarking, and navigation capabilities right within ChatGPT's interface.
 
+## 🧩 Product Problem Statement
+
+ChatGPT conversations are increasingly used as long-running workspaces for research, planning, coding help, writing, and decision-making, but the native ChatGPT experience offers limited tools for rediscovering important context inside a single conversation. When a thread grows beyond 20 messages, users often have to manually scroll through long exchanges to find an earlier prompt, key answer, decision, link, code snippet, or instruction. This becomes even harder days or weeks later, when the user remembers that the information exists but cannot quickly locate where it appeared.
+
+The missing product capabilities create friction for users who rely on ChatGPT as a knowledge workspace:
+
+- No dedicated in-conversation search for quickly finding previously sent messages or responses.
+- No lightweight way to mark, save, or return to important moments inside long conversations.
+- No structured navigation across user prompts and ChatGPT responses in lengthy threads.
+- No efficient recovery path for valuable context after time has passed.
+- Increased cognitive load from repeatedly rereading and scrolling through old messages.
+
+## 💡 Product Solution Statement
+
+ChatGPT Compass addresses this problem by adding a product layer for conversation navigation, discovery, and retention directly inside the ChatGPT experience. It helps users treat long conversations as organized, searchable workspaces instead of disposable chat logs.
+
+The solution focuses on practical productivity outcomes:
+
+- Surface conversation messages in a side panel so users can quickly scan the thread structure.
+- Enable fast search and filtering to rediscover specific content without manual scrolling.
+- Provide bookmarking so important prompts, answers, decisions, and references can be saved.
+- Support direct navigation back to selected messages with clear visual highlighting.
+- Preserve saved context across sessions so useful information remains accessible later.
+
 ## ✨ Features
 
 ### 🎯 **Smart Message Navigation**
